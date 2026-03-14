@@ -1,0 +1,30 @@
+{
+    "Group": "com.azuredoom",
+    "Name": "REPLACE_ME",
+    "Version": "0.0.1",
+    "Description": "REPLACE_ME",
+    "Authors": [
+        {
+            "Name": "AzureDoom"
+        }
+    ],
+    "Website": "REPLACE_ME",
+    "ServerVersion": "2026.02.19-1a311a592",
+    "Dependencies": {
+        "Hytale:EntityModule": "*",
+        "Hytale:InteractionModule": "*",
+        "Hytale:DamageModule": "*",
+        "Hytale:AssetModule": "*",
+        "com.azuredoom:levelingcore": "*"
+    },
+    "OptionalDependencies": {
+        "Ellie:HyUI": "*",
+        "org.herolias:DynamicTooltipsLib": "*"
+    },
+    "DisabledByDefault": false,
+    "Main": "com.azuredoom.modid.Main",
+    "IncludesAssetPack": true,
+    "UpdateChecker": {
+        "CurseForge": "REPLACE_ME"
+    }
+}

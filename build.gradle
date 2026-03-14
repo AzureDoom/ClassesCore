@@ -1,0 +1,348 @@
+plugins {
+    id 'idea'
+    id 'java'
+    id 'maven-publish'
+    id 'com.diffplug.spotless' version '8.1.0'
+    id 'hytale-mod' version '0.+'
+}
+
+configurations {
+    vineflowerTool
+    vineImplementation {
+        canBeResolved = false
+        canBeConsumed = false
+    }
+    vineCompileOnly {
+        canBeResolved = false
+        canBeConsumed = false
+    }
+    vineDecompileClasspath {
+        canBeResolved = true
+        canBeConsumed = false
+        extendsFrom(vineImplementation, vineCompileOnly)
+    }
+    implementation.extendsFrom(vineImplementation)
+    compileOnly.extendsFrom(vineCompileOnly)
+}
+
+javadoc {
+    options.addStringOption('Xdoclint:-missing', '-quiet')
+}
+
+group = project.group
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "Hytale Server Release"
+        url = uri("https://maven.hytale.com/release")
+    }
+    maven {
+        name = "azuredoomMods"
+        url = uri("https://maven.azuredoom.com/mods")
+    }
+    maven {
+        name = "hytalemoddingReleases"
+        url = uri("https://maven.hytalemodding.dev/releases")
+    }
+    maven {
+        name = "hMReleases"
+        url = uri("https://maven.hytale-mods.dev/releases")
+    }
+    maven {
+        url "https://cursemaven.com"
+    }
+    exclusiveContent {
+        forRepository {
+            ivy {
+                name = "Modtale"
+                url = uri("https://api.modtale.net/api/v1")
+                patternLayout {
+                    artifact("projects/[module]/versions/[revision]/download")
+                }
+                metadataSources {
+                    artifact()
+                }
+            }
+        }
+        filter {
+            includeGroup("modtale")
+        }
+    }
+}
+
+dependencies {
+    vineflowerTool 'org.vineflower:vineflower:1.11.2'
+    implementation("com.azuredoom.levelingcore:LevelingCore:0.+")
+    vineImplementation 'curse.maven:hyui-1431415:7693755'
+    vineImplementation 'curse.maven:dynamictooltipslib-1459711:7702598'
+    //vineImplementation 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'
+    //compileOnly fileTree(dir: "$rootDir/libs", include: ["*.jar"])
+    //runtimeOnly fileTree(dir: "$rootDir/libs", include: ["*.jar"])
+}
+
+def serverRunDir = file("$projectDir/run")
+if (!serverRunDir.exists()) {
+    serverRunDir.mkdirs()
+}
+
+tasks.register('updatePluginManifest') {
+    group = "hytale"
+    def manifestFile = file('src/main/resources/manifest.json')
+    doLast {
+        def manifestJson = new groovy.json.JsonSlurper().parseText(manifestFile.text)
+        def propStr = { String key, Object fallback = null ->
+            project.hasProperty(key) && project.property(key) != null
+                    ? project.property(key).toString()
+                    : fallback
+        }
+        def ensureMap = { Object parent, String key ->
+            if (!(parent[key] instanceof Map)) parent[key] = [:]
+            parent[key] as Map
+        }
+
+        def parseDepMap = { String raw ->
+            def out = [:]
+            if (!raw) return out
+            raw.split(/\s*,\s*/).findAll { it?.trim() }.each { entry ->
+                def parts = entry.split(/\s*=\s*/, 2)
+                if (parts.length == 2) out[parts[0].trim()] = parts[1].trim()
+            }
+            out
+        }
+
+        def parseAuthors = { String raw ->
+            if (!raw) return null
+            raw.split(/\s*,\s*/).findAll { it?.trim() }.collect { n -> [Name: n.trim()] }
+        }
+        manifestJson.Group = project.manifest_group
+        manifestJson.Name = project.mod_id
+        manifestJson.Version = project.version
+        manifestJson.Description = project.mod_description
+        manifestJson.Authors = parseAuthors(propStr('mod_credits', null))
+        manifestJson.Website = project.mod_url
+        manifestJson.ServerVersion = project.server_version
+        manifestJson.Dependencies = parseDepMap(propStr('manifest_dependencies', null))
+        manifestJson.OptionalDependencies = parseDepMap(propStr('manifest_opt_dependencies', null))
+        manifestJson.DisabledByDefault = project.disabled_by_default.toBoolean()
+        manifestJson.Main = project.main_class
+        manifestJson.IncludesAssetPack = project.includes_pack.toBoolean()
+        manifestJson.UpdateChecker = project.main_class
+        ensureMap(manifestJson, 'UpdateChecker').CurseForge = propStr('curseforgeID', null)
+        manifestFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(manifestJson))
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn 'updatePluginManifest'
+}
+
+spotless {
+    java {
+        eclipse().configFile("$rootDir/eclipse-formatter.xml")
+        endWithNewline()
+        importOrder("", "java", group.toString(), "\\#")
+        leadingTabsToSpaces(4)
+        removeUnusedImports()
+        trimTrailingWhitespace()
+    }
+}
+
+tasks.build {
+    dependsOn("spotlessApply")
+}
+
+publishing {
+    repositories {
+        maven {
+            name = project.mod_id
+            url = project.maven_url
+            credentials(PasswordCredentials)
+            authentication {
+                basic(BasicAuthentication)
+            }
+        }
+    }
+    publications {
+        maven(MavenPublication) {
+            artifactId base.archivesName.get()
+            from components.java
+        }
+    }
+}
+
+tasks.register("decompileLibsWithVineflower") {
+    group = "decompilation"
+    description = "Decompile /libs jars + implementation/compileOnly deps (compileClasspath) into build/vineflower/<jarName>/"
+
+    def libsDir = file("$rootDir/libs")
+    def outDir = file("$buildDir/vineflower")
+
+    def depConfig = configurations.vineDecompileClasspath
+
+    inputs.files(depConfig)
+    inputs.dir(libsDir)
+    outputs.dir(outDir)
+
+    doLast {
+        outDir.mkdirs()
+
+        def vineflowerJar = configurations.vineflowerTool.singleFile
+
+        def javaExe = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(java_version)
+        }.get().executablePath.asFile.absolutePath
+
+
+        def localJars = libsDir.exists()
+                ? fileTree(dir: libsDir, include: ["*.jar"]).files
+                : [] as Set<File>
+
+        def depJars = depConfig.incoming.artifactView { it.lenient(true) }
+                .files.files
+                .findAll { it.name.endsWith(".jar") } as Set<File>
+
+        def jars = (localJars + depJars).toList().unique()
+
+        if (jars.isEmpty()) {
+            logger.lifecycle("No .jar files found in /libs or on compileClasspath.")
+            return
+        }
+
+        jars.each { jarFile ->
+            def jarBase = jarFile.name.replaceAll(/\.jar$/, "")
+            def jarOut = new File(outDir, jarBase)
+            jarOut.mkdirs()
+
+            def externals = jars.findAll { it != jarFile }
+                    .collectMany { ["-e", it.absolutePath] }
+
+            def cmd = [
+                    javaExe,
+                    "-jar", vineflowerJar.absolutePath,
+                    *externals,
+                    jarFile.absolutePath,
+                    jarOut.absolutePath
+            ]
+
+            logger.lifecycle("Running: ${cmd.join(' ')}")
+
+            def pb = new ProcessBuilder(cmd)
+            pb.directory(project.projectDir)
+            pb.redirectErrorStream(true)
+
+            def proc = pb.start()
+            proc.inputStream.withReader { r ->
+                r.eachLine { line -> logger.lifecycle(line) }
+            }
+
+            def exit = proc.waitFor()
+            if (exit != 0) {
+                logger.lifecycle("Vineflower failed for ${jarFile.name} (exit ${exit})")
+            } else {
+                logger.lifecycle("Decompiled ${jarFile.name} -> ${jarOut}")
+            }
+        }
+    }
+}
+
+def keyPropsFile = new File(rootProject.projectDir, "key.properties")
+
+if (keyPropsFile.exists()) {
+    tasks.register("publishToModtale", Exec) {
+        group = "publishing"
+        description = "Publishes the built jar and changelog to Modtale.net."
+        dependsOn tasks.named("build")
+        def curlExe = org.gradle.internal.os.OperatingSystem.current().isWindows()
+                ? "C:/Windows/System32/curl.exe"
+                : "curl"
+
+        doFirst {
+            def releaseProp = new Properties()
+            releaseProp.load(new FileInputStream(keyPropsFile))
+            def apiKey = releaseProp.getProperty("modTaleKey")
+            def projectId = releaseProp.getProperty("modTaleProjectId")
+            def jarFile = layout.buildDirectory
+                    .file("libs/${project.name}-${project.version}.jar")
+                    .get().asFile
+            def changelogFile = rootProject.file("changelog.md")
+            def changelogText = changelogFile.text
+
+            commandLine(
+                    curlExe, '-X', 'POST',
+                    "https://api.modtale.net/api/v1/projects/$projectId/versions",
+                    '-H', "X-MODTALE-KEY: ${apiKey}",
+                    '-F', "file=@${jarFile.absolutePath}",
+                    '-F', "versionNumber=${project.version}",
+                    '-F', "channel=${project.release_type}",
+                    '-F', "gameVersions=${project.hytale_version}",
+                    '-F', "changelog=${changelogText}"
+            )
+        }
+    }
+    // TODO: Move to hytale.curseforge.com when actually working because CurseForge didn't bother getting this ready dispute early access to Hytale.
+    tasks.register("publishToCurseForge", Exec) {
+        group = "publishing"
+        description = "Publishes the built jar and changelog to CurseForge."
+        dependsOn tasks.named("build")
+
+        def curlExe = org.gradle.internal.os.OperatingSystem.current().isWindows()
+                ? "C:/Windows/System32/curl.exe"
+                : "curl"
+
+        doFirst {
+            def releaseProp = new Properties()
+            releaseProp.load(new FileInputStream(keyPropsFile))
+            def apiKey = releaseProp.getProperty("curseKey")
+
+            def jarFile = layout.buildDirectory
+                    .file("libs/${project.name}-${project.version}.jar")
+                    .get().asFile
+
+            def changelogText = rootProject.file("changelog.md").text
+            def cfReleaseType = project.release_type.toString().toLowerCase()
+
+            def requiredDeps = [
+                    "levelingcore"
+            ]
+
+            def optionalDeps = [
+                    "hyui",
+                    "dynamictooltipslib"
+            ]
+
+            def dependencies = []
+
+            requiredDeps.each {
+                dependencies << [ slug: it, type: "requiredDependency" ]
+            }
+            optionalDeps.each {
+                dependencies << [ slug: it, type: "optionalDependency" ]
+            }
+
+            def metadataObj = [
+                    changelog     : changelogText,
+                    changelogType : "markdown",
+                    displayName   : "${project.name} ${project.version}",
+                    gameVersions  : [14284],
+                    releaseType   : cfReleaseType,
+                    relations     : [ projects: dependencies ]
+            ]
+            def metadataJson = groovy.json.JsonOutput.toJson(metadataObj)
+
+            commandLine(
+                    curlExe,
+                    "-f", "-sS",
+                    "-X", "POST",
+                    "https://legacy.curseforge.com/api/projects/${project.curseforgeID}/upload-file",
+                    "-H", "X-Api-Token: ${apiKey}",
+                    "-F", "metadata=${metadataJson};type=application/json",
+                    "-F", "file=@${jarFile.absolutePath}"
+            )
+        }
+    }
+}
