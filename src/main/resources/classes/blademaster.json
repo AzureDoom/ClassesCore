@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "blademaster",
+  "displayName": "Blademaster",
+  "description": "They use one medium-sized one-handed blade in battle.",
+  "passives": [
+    {
+      "id": "blademaster_health_1",
+      "type": "attribute_multiplier",
+      "attribute": "max_health",
+      "value": 2
+    },
+    {
+      "id": "blademaster_melee_1",
+      "type": "damage_multiplier",
+      "damageType": "melee",
+      "value": 0.05
+    }
+  ],
+  "equipmentRules": {
+    "allowedWeapons": ["Weapon_Sword_Adamantite", "Weapon_Sword_Crude"]
+  }
+}
