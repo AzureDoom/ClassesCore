@@ -1,5 +1,6 @@
 package com.azuredoom.classescore;
 
+import com.azuredoom.classescore.gameplay.services.damage.ClassDamageSystem;
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
@@ -131,6 +132,7 @@ public class ClassesCore extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(
             new HandGateTickingSystem(ITEM_BLOCK_PACKET_MANAGER.getHandCheckState(), PLAYER_RESTRICTION_CACHE)
         );
+        getEntityStoreRegistry().registerSystem(new ClassDamageSystem());
     }
 
     public static Config<ClassesCoreConfig> getConfig() {

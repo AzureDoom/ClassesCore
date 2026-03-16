@@ -121,7 +121,7 @@ public final class ClassesBootstrap {
                             PassiveType.fromJson(passive.get("type").getAsString()),
                             passive.has("attribute") ? passive.get("attribute").getAsString() : null,
                             passive.has("damageType") ? passive.get("damageType").getAsString() : null,
-                            passive.get("value").getAsDouble()
+                            passive.get("value").getAsFloat()
                         )
                     );
                 }

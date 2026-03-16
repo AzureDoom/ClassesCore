@@ -14,7 +14,7 @@
       "id": "blademaster_melee_1",
       "type": "damage_multiplier",
       "damageType": "melee",
-      "value": 0.05
+      "value": 0.5
     }
   ],
   "equipmentRules": {

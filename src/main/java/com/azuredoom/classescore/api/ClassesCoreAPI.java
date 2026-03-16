@@ -34,7 +34,7 @@ public final class ClassesCoreAPI {
     }
 
     public static boolean playerHasClass(UUID playerId) {
-        return getPlayerState(playerId).isPresent();
+        return hasClass(getSelectedClassId(playerId).orElse(null));
     }
 
     public static boolean hasClass(String classId) {
@@ -72,13 +72,13 @@ public final class ClassesCoreAPI {
         return true;
     }
 
-    public static boolean clearClass(UUID playerId) {
+    public static boolean clearClass(UUID playerId, String classId) {
         var service = getClassServiceIfPresent().orElse(null);
         if (service == null) {
             return false;
         }
 
-        service.clearClass(playerId);
+        service.clearClass(playerId, classId);
         return true;
     }
 
