@@ -15,7 +15,6 @@ native
 build
 .gradle
 .profileconfig.json
-data
 run
 libs/PartyPro
 
