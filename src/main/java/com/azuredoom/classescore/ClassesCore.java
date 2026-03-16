@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import com.azuredoom.classescore.api.ClassesCoreAPI;
 import com.azuredoom.classescore.bootstrap.ClassesBootstrap;
 import com.azuredoom.classescore.command.ClassCommand;
+import com.azuredoom.classescore.compat.DynamicTooltipsLibCompat;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
 import com.azuredoom.classescore.data.ClassRegistry;
 import com.azuredoom.classescore.exceptions.ClassesCoreException;
@@ -98,7 +99,7 @@ public class ClassesCore extends JavaPlugin {
             ClassesCore.equipBlockManager.start();
         }
         if (PluginManager.get().getPlugin(new PluginIdentifier("org.herolias", "DynamicTooltipsLib")) != null) {
-            // DynamicTooltipsLibCompat.register();
+            DynamicTooltipsLibCompat.register();
         }
         LOGGER.at(Level.INFO)
             .log("ClassesCore setup complete. Loaded " + classRegistry.all().size() + " classes.");
