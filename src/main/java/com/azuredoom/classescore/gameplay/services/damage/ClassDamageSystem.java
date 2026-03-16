@@ -1,7 +1,5 @@
 package com.azuredoom.classescore.gameplay.services.damage;
 
-import com.azuredoom.classescore.ClassesCore;
-import com.azuredoom.classescore.data.PassiveType;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Store;
@@ -23,30 +21,33 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
+import com.azuredoom.classescore.ClassesCore;
+import com.azuredoom.classescore.data.PassiveType;
+
 public class ClassDamageSystem extends DamageEventSystem {
 
     private static final Set<String> RANGED_TERMS = Set.of(
-            "range",
-            "ranged",
-            "projectile",
-            "arrow",
-            "bow",
-            "crossbow",
-            "bolt",
-            "shot",
-            "bullet",
-            "thrown",
-            "throw",
-            "missile"
+        "range",
+        "ranged",
+        "projectile",
+        "arrow",
+        "bow",
+        "crossbow",
+        "bolt",
+        "shot",
+        "bullet",
+        "thrown",
+        "throw",
+        "missile"
     );
 
     @Override
     public void handle(
-            int index,
-            @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk,
-            @NonNullDecl Store<EntityStore> store,
-            @NonNullDecl CommandBuffer<EntityStore> commandBuffer,
-            @NonNullDecl Damage damage
+        int index,
+        @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk,
+        @NonNullDecl Store<EntityStore> store,
+        @NonNullDecl CommandBuffer<EntityStore> commandBuffer,
+        @NonNullDecl Damage damage
     ) {
         var isPlayer = archetypeChunk.getArchetype().contains(EntityModule.get().getPlayerComponentType());
         if (isPlayer)

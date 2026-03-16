@@ -86,11 +86,11 @@ public final class ClassServiceImpl {
             StaticModifier.CalculationType type;
             var id = passive.id().toLowerCase();
             var index = STAT_INDEX_MAP.entrySet()
-                    .stream()
-                    .filter(e -> id.contains(e.getKey()))
-                    .findFirst()
-                    .map(e -> e.getValue().get())
-                    .orElse(null);
+                .stream()
+                .filter(e -> id.contains(e.getKey()))
+                .findFirst()
+                .map(e -> e.getValue().get())
+                .orElse(null);
             if (index == null) {
                 continue;
             }
@@ -146,11 +146,11 @@ public final class ClassServiceImpl {
         for (var passive : definition.passives()) {
             var id = passive.id().toLowerCase();
             var index = STAT_INDEX_MAP.entrySet()
-                    .stream()
-                    .filter(e -> id.contains(e.getKey()))
-                    .findFirst()
-                    .map(e -> e.getValue().get())
-                    .orElse(null);
+                .stream()
+                .filter(e -> id.contains(e.getKey()))
+                .findFirst()
+                .map(e -> e.getValue().get())
+                .orElse(null);
             if (index == null) {
                 continue;
             }

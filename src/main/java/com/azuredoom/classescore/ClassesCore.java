@@ -1,6 +1,5 @@
 package com.azuredoom.classescore;
 
-import com.azuredoom.classescore.gameplay.services.damage.ClassDamageSystem;
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
@@ -23,6 +22,7 @@ import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.data.ClassRegistry;
 import com.azuredoom.classescore.exceptions.ClassesCoreException;
 import com.azuredoom.classescore.gameplay.services.armor.EquipBlockManager;
+import com.azuredoom.classescore.gameplay.services.damage.ClassDamageSystem;
 import com.azuredoom.classescore.gameplay.services.items.HandGateTickingSystem;
 import com.azuredoom.classescore.gameplay.services.items.ItemBlockPacketManager;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
