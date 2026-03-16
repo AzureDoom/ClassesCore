@@ -10,7 +10,6 @@ import java.util.logging.Level;
 
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.ClassesCoreAPI;
-import com.azuredoom.classescore.data.ClassDefinition;
 
 public class DynamicTooltipsLibCompat {
 

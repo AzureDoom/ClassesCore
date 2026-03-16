@@ -17,6 +17,7 @@ import com.azuredoom.classescore.bootstrap.ClassesBootstrap;
 import com.azuredoom.classescore.command.ClassCommand;
 import com.azuredoom.classescore.compat.DynamicTooltipsLibCompat;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
+import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.data.ClassRegistry;
 import com.azuredoom.classescore.exceptions.ClassesCoreException;
 import com.azuredoom.classescore.gameplay.services.armor.EquipBlockManager;
@@ -55,7 +56,6 @@ public class ClassesCore extends JavaPlugin {
     protected void setup() {
         INSTANCE = this;
         config.save();
-        LOGGER.at(Level.INFO).log("Setting up classescore!");
 
         var bootstrap = new ClassesBootstrap(this, config.get()).bootstrap();
 
@@ -90,11 +90,7 @@ public class ClassesCore extends JavaPlugin {
                     ITEM_BLOCK_PACKET_MANAGER.getHandCheckState().remove(playerId);
                     ITEM_BLOCK_PACKET_MANAGER.clearPlayer(playerId);
                     PLAYER_RESTRICTION_CACHE.clear(playerId);
-                    ClassesCoreAPI.getClassServiceIfPresent().ifPresent(service -> {
-                        if (service instanceof ClassServiceImpl impl) {
-                            impl.evictPlayer(playerId);
-                        }
-                    });
+                    ClassesCoreAPI.getClassServiceIfPresent().ifPresent(service -> service.evictPlayer(playerId));
                 });
             ClassesCore.equipBlockManager.start();
         }
@@ -103,6 +99,13 @@ public class ClassesCore extends JavaPlugin {
         }
         LOGGER.at(Level.INFO)
             .log("ClassesCore setup complete. Loaded " + classRegistry.all().size() + " classes.");
+        LOGGER.at(Level.INFO)
+            .log(
+                "ClassesCore loaded the following classes: " + classRegistry.all()
+                    .stream()
+                    .map(ClassDefinition::id)
+                    .toList()
+            );
     }
 
     @Override
@@ -116,7 +119,6 @@ public class ClassesCore extends JavaPlugin {
             ITEM_BLOCK_PACKET_MANAGER.shutdown();
             equipBlockManager.shutdown();
         }
-        LOGGER.at(Level.INFO).log("Shutting down classescore!");
         var bootstrap = new ClassesBootstrap(this, config.get()).bootstrap();
         try {
             bootstrap.closeable().close();
