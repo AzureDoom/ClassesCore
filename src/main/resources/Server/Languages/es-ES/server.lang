@@ -1,0 +1,6 @@
+classescore.unknownclass = Clase desconocida: {classId}
+classescore.joinedclass = Te has unido a la clase seleccionada: {className}
+classescore.leftclass = Has salido de la clase seleccionada: {className}
+classescore.itemrestricted = No puedes usar este {itemName} como clase {displayName}.
+classescore.noclassselected = El jugador no está en ninguna clase
+classescore.alreadyhasclass = El jugador ya tiene una clase

@@ -2,7 +2,6 @@ package com.azuredoom.classescore.command;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
@@ -16,6 +15,7 @@ import javax.annotation.Nonnull;
 
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.ClassesCoreAPI;
+import com.azuredoom.classescore.lang.BaseLangMessages;
 
 public final class ClassCommand extends AbstractPlayerCommand {
 
@@ -35,9 +35,6 @@ public final class ClassCommand extends AbstractPlayerCommand {
         this.classIdArg = this.withRequiredArg("classId", "Class id to select", ArgTypes.STRING);
     }
 
-    /*
-     * TODO: Update Message.raw to translated messages instead
-     */
     @Override
     protected void execute(
         @NotNull CommandContext commandContext,
@@ -47,6 +44,7 @@ public final class ClassCommand extends AbstractPlayerCommand {
         @NotNull World world
     ) {
         if (ClassesCoreAPI.playerHasClass(playerRef.getUuid())) {
+            playerRef.sendMessage(BaseLangMessages.ALREADY_HAS_CLASS);
             return;
         }
         playerRef = this.playerArg.get(commandContext);
@@ -54,11 +52,11 @@ public final class ClassCommand extends AbstractPlayerCommand {
 
         var definition = ClassesCore.getClassRegistry().get(classId);
         if (definition.isEmpty()) {
-            playerRef.sendMessage(Message.raw("Unknown class: " + classId));
+            playerRef.sendMessage(BaseLangMessages.UNKNOWN_CLASS.param("classId", classId));
             return;
         }
 
         ClassesCore.getClassService().selectClass(playerRef.getUuid(), classId);
-        playerRef.sendMessage(Message.raw("Joined selected class: " + definition.get().displayName()));
+        playerRef.sendMessage(BaseLangMessages.JOINED_CLASS.param("className", definition.get().displayName()));
     }
 }
