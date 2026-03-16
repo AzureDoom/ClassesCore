@@ -18,7 +18,6 @@ import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
 import com.azuredoom.classescore.data.*;
 import com.azuredoom.classescore.db.JdbcClassesRepository;
-import com.azuredoom.classescore.service.ClassService;
 import com.azuredoom.classescore.service.ClassServiceImpl;
 
 public final class ClassesBootstrap {
@@ -155,7 +154,7 @@ public final class ClassesBootstrap {
     public record BootstrapResult(
         JdbcClassesRepository repository,
         ClassRegistry registry,
-        ClassService service,
+        ClassServiceImpl service,
         AutoCloseable closeable
     ) {}
 }

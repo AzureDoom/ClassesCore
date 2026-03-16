@@ -22,7 +22,6 @@ import com.azuredoom.classescore.gameplay.services.armor.EquipBlockManager;
 import com.azuredoom.classescore.gameplay.services.items.HandGateTickingSystem;
 import com.azuredoom.classescore.gameplay.services.items.ItemBlockPacketManager;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
-import com.azuredoom.classescore.service.ClassService;
 import com.azuredoom.classescore.service.ClassServiceImpl;
 
 public class ClassesCore extends JavaPlugin {
@@ -33,7 +32,7 @@ public class ClassesCore extends JavaPlugin {
 
     private static Config<ClassesCoreConfig> config = null;
 
-    private static ClassService classService;
+    private static ClassServiceImpl classService;
 
     private static ClassRegistry classRegistry;
 
@@ -135,7 +134,7 @@ public class ClassesCore extends JavaPlugin {
         return config;
     }
 
-    public static ClassService getClassService() {
+    public static ClassServiceImpl getClassService() {
         return classService;
     }
 

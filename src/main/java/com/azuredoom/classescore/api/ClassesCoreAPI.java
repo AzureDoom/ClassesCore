@@ -9,13 +9,13 @@ import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.model.PlayerClassState;
 import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.data.ClassRegistry;
-import com.azuredoom.classescore.service.ClassService;
+import com.azuredoom.classescore.service.ClassServiceImpl;
 
 public final class ClassesCoreAPI {
 
     private ClassesCoreAPI() {}
 
-    public static Optional<ClassService> getClassServiceIfPresent() {
+    public static Optional<ClassServiceImpl> getClassServiceIfPresent() {
         return Optional.ofNullable(ClassesCore.getClassService());
     }
 

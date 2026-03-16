@@ -12,7 +12,7 @@ import com.azuredoom.classescore.data.ClassRegistry;
 import com.azuredoom.classescore.db.JdbcClassesRepository;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
 
-public final class ClassServiceImpl implements ClassService {
+public final class ClassServiceImpl {
 
     private final JdbcClassesRepository repository;
 
@@ -32,13 +32,11 @@ public final class ClassServiceImpl implements ClassService {
         this.restrictionCache = Objects.requireNonNull(restrictionCache, "restrictionCache");
     }
 
-    @Override
     public Optional<PlayerClassState> getPlayerState(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
         return playerStateCache.computeIfAbsent(playerId, this::loadPlayerState);
     }
 
-    @Override
     public Optional<ClassDefinition> getSelectedClassDefinition(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
 
@@ -46,7 +44,6 @@ public final class ClassServiceImpl implements ClassService {
             .flatMap(state -> classRegistry.get(state.classId()));
     }
 
-    @Override
     public void selectClass(UUID playerId, String classId) {
         Objects.requireNonNull(playerId, "playerId");
 
@@ -82,7 +79,6 @@ public final class ClassServiceImpl implements ClassService {
         restrictionCache.setClass(playerId, definition);
     }
 
-    @Override
     public void clearClass(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
 
@@ -91,13 +87,11 @@ public final class ClassServiceImpl implements ClassService {
         restrictionCache.clear(playerId);
     }
 
-    @Override
     public boolean hasSelectedClass(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
         return getPlayerState(playerId).isPresent();
     }
 
-    @Override
     public boolean isWeaponAllowed(UUID playerId, String weaponId) {
         Objects.requireNonNull(playerId, "playerId");
 
@@ -110,7 +104,6 @@ public final class ClassServiceImpl implements ClassService {
             .orElse(true);
     }
 
-    @Override
     public boolean isArmorAllowed(UUID playerId, String armorId) {
         Objects.requireNonNull(playerId, "playerId");
 
