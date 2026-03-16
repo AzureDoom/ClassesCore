@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import com.azuredoom.classescore.api.ClassesCoreAPI;
 import com.azuredoom.classescore.bootstrap.ClassesBootstrap;
 import com.azuredoom.classescore.command.ClassCommand;
+import com.azuredoom.classescore.command.LeaveClassCommand;
 import com.azuredoom.classescore.compat.DynamicTooltipsLibCompat;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
 import com.azuredoom.classescore.data.ClassDefinition;
@@ -64,6 +65,7 @@ public class ClassesCore extends JavaPlugin {
         classRegistry = bootstrap.registry();
 
         this.getCommandRegistry().registerCommand(new ClassCommand());
+        this.getCommandRegistry().registerCommand(new LeaveClassCommand());
 
         if (config.get().isEnableClassItemRestrictions()) {
             ITEM_BLOCK_PACKET_MANAGER.start();
