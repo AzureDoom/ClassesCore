@@ -62,7 +62,7 @@ public final class ClassCommand extends AbstractPlayerCommand {
             return;
         }
 
-        ClassesCoreAPI.selectClass(playerRef.getUuid(), classId);
+        ClassesCore.getClassService().selectClass(playerRef.getUuid(), classId);
         playerRef.sendMessage(Message.raw("Joined selected class: " + definition.get().displayName()));
     }
 }
