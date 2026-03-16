@@ -85,7 +85,7 @@ public class DynamicTooltipsLibCompat {
                 return true;
             }
 
-            var tooltipText = "Usable by: " + String.join(", ", allowedClasses);
+            var tooltipText = "Classes allowed: " + String.join(", ", allowedClasses);
 
             api.addGlobalLine(itemId, tooltipText);
 
