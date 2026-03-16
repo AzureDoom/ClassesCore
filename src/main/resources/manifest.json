@@ -1,14 +1,14 @@
 {
     "Group": "com.azuredoom",
-    "Name": "REPLACE_ME",
+    "Name": "classescore",
     "Version": "0.0.1",
-    "Description": "REPLACE_ME",
+    "Description": "Classes Module for the LevelingCore mod",
     "Authors": [
         {
             "Name": "AzureDoom"
         }
     ],
-    "Website": "REPLACE_ME",
+    "Website": "https://modtale.net/mod/classescore",
     "ServerVersion": "2026.02.19-1a311a592",
     "Dependencies": {
         "Hytale:EntityModule": "*",
@@ -22,9 +22,9 @@
         "org.herolias:DynamicTooltipsLib": "*"
     },
     "DisabledByDefault": false,
-    "Main": "com.azuredoom.modid.Main",
+    "Main": "com.azuredoom.classescore.ClassesCore",
     "IncludesAssetPack": true,
     "UpdateChecker": {
-        "CurseForge": "REPLACE_ME"
+        "CurseForge": "1486422"
     }
 }

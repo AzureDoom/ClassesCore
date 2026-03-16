@@ -1,7 +1,6 @@
 package com.azuredoom.classescore.db;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,9 +8,12 @@ import java.sql.Statement;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
 import javax.sql.DataSource;
 
+import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.model.PlayerClassState;
+import com.azuredoom.classescore.exceptions.ClassesCoreException;
 
 public final class JdbcClassesRepository {
 
@@ -131,97 +133,6 @@ public final class JdbcClassesRepository {
         }
     }
 
-    public void saveMetadata(UUID playerId, String key, String valueJson) {
-        Objects.requireNonNull(playerId, "playerId");
-        validateKey(key);
-        Objects.requireNonNull(valueJson, "valueJson");
-
-        try (var connection = dataSource.getConnection()) {
-            var previousAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-
-            try {
-                if (metadataExists(connection, playerId, key)) {
-                    updateMetadata(connection, playerId, key, valueJson);
-                } else {
-                    insertMetadata(connection, playerId, key, valueJson);
-                }
-
-                connection.commit();
-                connection.setAutoCommit(previousAutoCommit);
-            } catch (SQLException e) {
-                rollbackQuietly(connection);
-                throw new RuntimeException(
-                    "Failed to save metadata for player " + playerId + " and key " + key,
-                    e
-                );
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Failed to open connection while saving metadata for player " + playerId,
-                e
-            );
-        }
-    }
-
-    public Optional<String> findMetadata(UUID playerId, String key) {
-        Objects.requireNonNull(playerId, "playerId");
-        validateKey(key);
-
-        var sql = """
-            SELECT meta_value
-            FROM %s
-            WHERE player_uuid = ? AND meta_key = ?
-            """.formatted(metadataTable);
-
-        try (
-            var connection = dataSource.getConnection();
-            var ps = connection.prepareStatement(sql)
-        ) {
-
-            ps.setString(1, playerId.toString());
-            ps.setString(2, key);
-
-            try (var rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return Optional.empty();
-                }
-                return Optional.ofNullable(rs.getString("meta_value"));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Failed to find metadata for player " + playerId + " and key " + key,
-                e
-            );
-        }
-    }
-
-    public void deleteMetadata(UUID playerId, String key) {
-        Objects.requireNonNull(playerId, "playerId");
-        validateKey(key);
-
-        var sql = """
-            DELETE FROM %s
-            WHERE player_uuid = ? AND meta_key = ?
-            """.formatted(metadataTable);
-
-        try (
-            var connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement(sql)
-        ) {
-
-            ps.setString(1, playerId.toString());
-            ps.setString(2, key);
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Failed to delete metadata for player " + playerId + " and key " + key,
-                e
-            );
-        }
-    }
-
     private boolean playerStateExists(Connection connection, UUID playerId) throws SQLException {
         var sql = "SELECT 1 FROM %s WHERE player_uuid = ?".formatted(playerClassTable);
 
@@ -259,61 +170,6 @@ public final class JdbcClassesRepository {
             ps.setString(1, state.classId());
             ps.setLong(2, state.updatedAt());
             ps.setString(3, state.playerId().toString());
-            ps.executeUpdate();
-        }
-    }
-
-    private boolean metadataExists(Connection connection, UUID playerId, String key) throws SQLException {
-        var sql = """
-            SELECT 1
-            FROM %s
-            WHERE player_uuid = ? AND meta_key = ?
-            """.formatted(metadataTable);
-
-        try (var ps = connection.prepareStatement(sql)) {
-            ps.setString(1, playerId.toString());
-            ps.setString(2, key);
-            try (var rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    private void insertMetadata(
-        Connection connection,
-        UUID playerId,
-        String key,
-        String valueJson
-    ) throws SQLException {
-        var sql = """
-            INSERT INTO %s (player_uuid, meta_key, meta_value)
-            VALUES (?, ?, ?)
-            """.formatted(metadataTable);
-
-        try (var ps = connection.prepareStatement(sql)) {
-            ps.setString(1, playerId.toString());
-            ps.setString(2, key);
-            ps.setString(3, valueJson);
-            ps.executeUpdate();
-        }
-    }
-
-    private void updateMetadata(
-        Connection connection,
-        UUID playerId,
-        String key,
-        String valueJson
-    ) throws SQLException {
-        var sql = """
-            UPDATE %s
-            SET meta_value = ?
-            WHERE player_uuid = ? AND meta_key = ?
-            """.formatted(metadataTable);
-
-        try (var ps = connection.prepareStatement(sql)) {
-            ps.setString(1, valueJson);
-            ps.setString(2, playerId.toString());
-            ps.setString(3, key);
             ps.executeUpdate();
         }
     }
@@ -366,12 +222,6 @@ public final class JdbcClassesRepository {
         }
     }
 
-    private static void validateKey(String key) {
-        if (key == null || key.isBlank()) {
-            throw new IllegalArgumentException("metadata key cannot be null or blank");
-        }
-    }
-
     private static String normalizePrefix(String prefix) {
         if (prefix == null || prefix.isBlank()) {
             return "classescore_";
@@ -385,12 +235,14 @@ public final class JdbcClassesRepository {
         } catch (SQLException ignored) {}
     }
 
-    public String describeDatabase() {
-        try (Connection connection = dataSource.getConnection()) {
-            DatabaseMetaData meta = connection.getMetaData();
-            return meta.getDatabaseProductName() + " " + meta.getDatabaseProductVersion();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to inspect database metadata", e);
+    public void close() {
+        try {
+            if (dataSource instanceof AutoCloseable c) {
+                ClassesCore.LOGGER.at(Level.INFO).log("Closing JDBC datasource");
+                c.close();
+            }
+        } catch (Exception e) {
+            throw new ClassesCoreException("Failed to close JDBC datasource", e);
         }
     }
 }

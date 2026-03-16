@@ -8,7 +8,7 @@ public final class PassiveResolver {
     public ResolvedClassBonuses resolve(ClassDefinition definition) {
         var bonuses = new ResolvedClassBonuses();
 
-        for (var passive : definition.getPassives()) {
+        for (var passive : definition.passives()) {
             applyPassive(bonuses, passive);
         }
 
@@ -16,15 +16,15 @@ public final class PassiveResolver {
     }
 
     private void applyPassive(ResolvedClassBonuses bonuses, PassiveDefinition passive) {
-        switch (passive.getType()) {
+        switch (passive.type()) {
             case ATTRIBUTE_MULTIPLIER -> bonuses.getAttributeMultipliers()
-                .merge(passive.getAttribute(), passive.getValue(), Double::sum);
+                .merge(passive.attribute(), passive.value(), Double::sum);
 
             case ATTRIBUTE_FLAT -> bonuses.getAttributeFlats()
-                .merge(passive.getAttribute(), passive.getValue(), Double::sum);
+                .merge(passive.attribute(), passive.value(), Double::sum);
 
             case DAMAGE_MULTIPLIER -> bonuses.getDamageMultipliers()
-                .merge(passive.getDamageType(), passive.getValue(), Double::sum);
+                .merge(passive.damageType(), passive.value(), Double::sum);
         }
     }
 }

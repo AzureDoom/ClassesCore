@@ -19,4 +19,6 @@ public interface ClassService {
     boolean hasSelectedClass(UUID playerId);
 
     boolean isWeaponAllowed(UUID playerId, String weaponId);
+
+    boolean isArmorAllowed(UUID playerId, String armorId);
 }
