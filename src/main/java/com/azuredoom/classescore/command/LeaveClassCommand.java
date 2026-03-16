@@ -17,19 +17,19 @@ import javax.annotation.Nonnull;
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.ClassesCoreAPI;
 
-public final class ClassCommand extends AbstractPlayerCommand {
+public class LeaveClassCommand extends AbstractPlayerCommand {
 
     @Nonnull
     private final RequiredArg<PlayerRef> playerArg;
 
     private final RequiredArg<String> classIdArg;
 
-    public ClassCommand() {
-        super("joinclass", "Join a class");
-        this.requirePermission("classescore.joinclass");
+    public LeaveClassCommand() {
+        super("leaveclass", "Leave a class");
+        this.requirePermission("classescore.leaveclass");
         this.playerArg = this.withRequiredArg(
             "player",
-            "Player to join class.",
+            "Player to leave class.",
             ArgTypes.PLAYER_REF
         );
         this.classIdArg = this.withRequiredArg("classId", "Class id to select", ArgTypes.STRING);
@@ -46,7 +46,7 @@ public final class ClassCommand extends AbstractPlayerCommand {
         @NotNull PlayerRef playerRef,
         @NotNull World world
     ) {
-        if (ClassesCoreAPI.playerHasClass(playerRef.getUuid())) {
+        if (!ClassesCoreAPI.playerHasClass(playerRef.getUuid())) {
             return;
         }
         playerRef = this.playerArg.get(commandContext);
@@ -58,7 +58,7 @@ public final class ClassCommand extends AbstractPlayerCommand {
             return;
         }
 
-        ClassesCore.getClassService().selectClass(playerRef.getUuid(), classId);
-        playerRef.sendMessage(Message.raw("Joined selected class: " + definition.get().displayName()));
+        ClassesCore.getClassService().clearClass(playerRef.getUuid(), classId);
+        playerRef.sendMessage(Message.raw("Left selected class: " + definition.get().displayName()));
     }
 }
