@@ -1,6 +1,7 @@
 package com.azuredoom.classescore.gameplay.services.damage;
 
 import com.azuredoom.classescore.ClassesCore;
+import com.azuredoom.classescore.data.PassiveType;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Store;
@@ -96,6 +97,9 @@ public class ClassDamageSystem extends DamageEventSystem {
         var multiplier = 1.0f;
 
         for (var passive : passives) {
+            if (passive.type() != PassiveType.DAMAGE_MULTIPLIER) {
+                continue;
+            }
             var passiveId = passive.id();
             if (passiveId == null) {
                 continue;
