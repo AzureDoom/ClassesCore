@@ -130,6 +130,13 @@ public class ClassDamageSystem extends DamageEventSystem {
         return AllLegacyLivingEntityTypesQuery.INSTANCE;
     }
 
+    /**
+     * Checks if the given text contains any of the specified terms, ignoring case sensitivity.
+     *
+     * @param text  the text to be searched; if null or blank, the method will return false
+     * @param terms the set of terms to search for in the text; cannot be null
+     * @return true if any term from the set is found within the text; false otherwise
+     */
     private static boolean containsAny(String text, Set<String> terms) {
         if (text == null || text.isBlank()) {
             return false;

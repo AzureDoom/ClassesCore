@@ -13,6 +13,13 @@ public class NotificationsUtil {
 
     private NotificationsUtil() {}
 
+    /**
+     * Sends a notification to a player indicating that a specific item is restricted based on the player's class.
+     *
+     * @param playerRef The reference to the player who will receive the notification.
+     * @param itemStack The item stack that is restricted.
+     * @param classId   The identifier of the class restricting the item.
+     */
     public static void sendItemClassRestrictionNotification(PlayerRef playerRef, ItemStack itemStack, String classId) {
         var itemTranslatedName = I18nModule.get()
             .getMessage(

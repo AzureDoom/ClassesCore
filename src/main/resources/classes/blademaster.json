@@ -3,6 +3,38 @@
   "id": "blademaster",
   "displayName": "Blademaster",
   "description": "They use one medium-sized one-handed blade in battle.",
+  "stats": [
+    {
+      "id": "strength",
+      "base": 10,
+      "perLevel": 1
+    },
+    {
+      "id": "agility",
+      "base": 10,
+      "perLevel": 0
+    },
+    {
+      "id": "perception",
+      "base": 10,
+      "perLevel": 1
+    },
+    {
+      "id": "vitality",
+      "base": 10,
+      "perLevel": 2
+    },
+    {
+      "id": "intelligence",
+      "base": 10,
+      "perLevel": 0
+    },
+    {
+      "id": "constitution",
+      "base": 10,
+      "perLevel": 1
+    }
+  ],
   "passives": [
     {
       "id": "blademaster_health_1",
@@ -14,7 +46,7 @@
       "id": "blademaster_melee_1",
       "type": "damage_multiplier",
       "damageType": "melee",
-      "value": 0.5
+      "value": 1.5
     }
   ],
   "equipmentRules": {

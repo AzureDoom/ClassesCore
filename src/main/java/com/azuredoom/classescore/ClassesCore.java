@@ -14,9 +14,10 @@ import java.util.logging.Level;
 
 import com.azuredoom.classescore.api.ClassesCoreAPI;
 import com.azuredoom.classescore.bootstrap.ClassesBootstrap;
-import com.azuredoom.classescore.command.ClassCommand;
+import com.azuredoom.classescore.command.JoinClassCommand;
 import com.azuredoom.classescore.command.LeaveClassCommand;
 import com.azuredoom.classescore.compat.DynamicTooltipsLibCompat;
+import com.azuredoom.classescore.compat.placeholderapi.PlaceholderAPICompat;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
 import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.data.ClassRegistry;
@@ -26,8 +27,10 @@ import com.azuredoom.classescore.gameplay.services.damage.ClassDamageSystem;
 import com.azuredoom.classescore.gameplay.services.items.HandGateTickingSystem;
 import com.azuredoom.classescore.gameplay.services.items.ItemBlockPacketManager;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
+import com.azuredoom.classescore.gameplay.services.stats.StatsTickingSystem;
 import com.azuredoom.classescore.service.ClassServiceImpl;
 
+@SuppressWarnings("removal")
 public class ClassesCore extends JavaPlugin {
 
     public static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
@@ -64,7 +67,7 @@ public class ClassesCore extends JavaPlugin {
         classService = bootstrap.service();
         classRegistry = bootstrap.registry();
 
-        this.getCommandRegistry().registerCommand(new ClassCommand());
+        this.getCommandRegistry().registerCommand(new JoinClassCommand());
         this.getCommandRegistry().registerCommand(new LeaveClassCommand());
 
         if (config.get().isEnableClassItemRestrictions()) {
@@ -113,7 +116,9 @@ public class ClassesCore extends JavaPlugin {
 
     @Override
     protected void start() {
-        LOGGER.at(Level.INFO).log("Starting classescore!");
+        if (PluginManager.get().getPlugin(new PluginIdentifier("HelpChat", "PlaceholderAPI")) != null) {
+            PlaceholderAPICompat.register();
+        }
     }
 
     @Override
@@ -135,6 +140,7 @@ public class ClassesCore extends JavaPlugin {
             new HandGateTickingSystem(ITEM_BLOCK_PACKET_MANAGER.getHandCheckState(), PLAYER_RESTRICTION_CACHE)
         );
         getEntityStoreRegistry().registerSystem(new ClassDamageSystem());
+        getEntityStoreRegistry().registerSystem(new StatsTickingSystem());
     }
 
     public static Config<ClassesCoreConfig> getConfig() {

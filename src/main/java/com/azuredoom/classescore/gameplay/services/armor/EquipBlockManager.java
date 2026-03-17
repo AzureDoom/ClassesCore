@@ -54,6 +54,13 @@ public class EquipBlockManager {
         inventoryChangeRegistration = null;
     }
 
+    /**
+     * Validates and ensures that the armor equipped by a player conforms to their class restrictions. Any items in the
+     * player's armor slots that are not allowed will be removed and returned to the player, either by adding them back
+     * to their inventory or dropping them in the world if there is no space.
+     *
+     * @param player the player whose armor is being validated; must not be null
+     */
     public void validateArmorOnReady(@Nonnull Player player) {
         ignoreArmorEvents.add(player.getUuid());
         HytaleServer.SCHEDULED_EXECUTOR.schedule(
@@ -104,6 +111,16 @@ public class EquipBlockManager {
         }
     }
 
+    /**
+     * Handles inventory change events and validates player armor to ensure compliance with class-specific restrictions.
+     * If any invalid armor is identified in the player's armor slots, it initiates rollback operations to restore the
+     * previous valid state.
+     * <p>
+     * The method reacts only to changes specifically in the armor container of a player entity and ensures that no
+     * unnecessary processing occurs for unrelated events or non-player entities.
+     *
+     * @param event the inventory change event containing details about the changes that occurred; must not be null
+     */
     private void onInventoryChange(@Nonnull LivingEntityInventoryChangeEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;
@@ -141,6 +158,19 @@ public class EquipBlockManager {
         }
     }
 
+    /**
+     * Rolls back transactions related to armor equipment for a player. This method ensures that any armor being
+     * equipped is valid, according to class-specific restrictions, and if not, reverts the changes to restore the
+     * previous valid state. Invalid items are refunded to the player's inventory or dropped if there's no available
+     * space. Notifications are sent to inform the player about class-based restrictions on the armor items.
+     *
+     * @param player         the player whose armor transaction needs to be rolled back; must not be null
+     * @param armorContainer the container holding the player's armor items; must not be null
+     * @param transaction    the transaction representing the armor equipment operation; may be null if no transaction
+     *                       exists
+     * @param refundedKeys   a set of keys representing already refunded slots to avoid duplicate refunds; must not be
+     *                       null
+     */
     private void rollbackArmorTransaction(
         @Nonnull Player player,
         @Nonnull ItemContainer armorContainer,
@@ -215,6 +245,15 @@ public class EquipBlockManager {
         }
     }
 
+    /**
+     * Compares two ItemStack objects to determine if they are equivalent in terms of item type, quantity, and metadata.
+     * Handles null and empty item cases.
+     *
+     * @param a the first ItemStack to compare; may be null
+     * @param b the second ItemStack to compare; may be null
+     * @return true if both ItemStack objects are equivalent, considering their item type, quantity, and metadata, or if
+     *         both are null or empty; false otherwise
+     */
     private static boolean sameStack(@Nullable ItemStack a, @Nullable ItemStack b) {
         if (a == b) {
             return true;
@@ -238,10 +277,24 @@ public class EquipBlockManager {
         return Objects.equals(a.getMetadata(), b.getMetadata());
     }
 
+    /**
+     * Creates a new {@code ItemStack} with a quantity of one, replicating the item type and metadata of the given
+     * {@code ItemStack}.
+     *
+     * @param stack the {@code ItemStack} to base the new stack on; must not be null
+     * @return a new {@code ItemStack} with the same item type and metadata as the input, but with a quantity of one
+     */
     private static ItemStack oneOf(@Nonnull ItemStack stack) {
         return new ItemStack(stack.getItemId(), 1, stack.getMetadata());
     }
 
+    /**
+     * Attempts to give the specified {@link ItemStack} to the player. If the item cannot be added to the player's
+     * inventory due to lack of space, it will be dropped in the world at the player's location.
+     *
+     * @param player the player who is receiving or dropping the item; must not be null
+     * @param stack  the item stack being given or dropped; must not be null
+     */
     private static void giveOrDrop(@Nonnull Player player, @Nonnull ItemStack stack) {
         if (ItemStack.isEmpty(stack)) {
             return;

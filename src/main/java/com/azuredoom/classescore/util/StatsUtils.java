@@ -20,6 +20,16 @@ public class StatsUtils {
         return store.getComponent(player.getReference(), EntityStatMap.getComponentType());
     }
 
+    /**
+     * Applies a static modifier to a specific stat in the player's stat map.
+     *
+     * @param store           The store that provides access to the player's entity components.
+     * @param player          The player whose stat is to be modified.
+     * @param index           The index representing the specific stat to modify.
+     * @param calculationType The method of calculation for the modifier (e.g., add, multiply).
+     * @param value           The value of the modifier to apply.
+     * @param modifierKey     The unique key identifying the modifier for this stat.
+     */
     public static void doStatChange(
         Store<EntityStore> store,
         Player player,
@@ -39,6 +49,15 @@ public class StatsUtils {
         playerStatMap.putModifier(index, modifierKey, modifier);
     }
 
+    /**
+     * Removes a specific stat modifier from the player's stat map, resets the stat's value, and recalculates the
+     * maximized stat value.
+     *
+     * @param store       The store that provides access to the player's entity components.
+     * @param player      The player whose stat modifier is to be removed.
+     * @param index       The index representing the specific stat to modify.
+     * @param modifierKey The key identifying the specific modifier to remove.
+     */
     public static void removeStatModifier(
         Store<EntityStore> store,
         Player player,

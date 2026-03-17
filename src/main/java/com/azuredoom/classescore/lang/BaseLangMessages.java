@@ -2,7 +2,7 @@ package com.azuredoom.classescore.lang;
 
 import com.hypixel.hytale.server.core.Message;
 
-public class BaseLangMessages {
+public final class BaseLangMessages {
 
     public static final Message UNKNOWN_CLASS = Message.translation("server.classescore.unknownclass");
 

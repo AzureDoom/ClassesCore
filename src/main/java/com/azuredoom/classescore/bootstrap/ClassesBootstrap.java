@@ -24,13 +24,10 @@ import java.util.zip.ZipFile;
 
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
-import com.azuredoom.classescore.data.ClassDefinition;
-import com.azuredoom.classescore.data.ClassRegistry;
-import com.azuredoom.classescore.data.EquipmentRules;
-import com.azuredoom.classescore.data.PassiveDefinition;
-import com.azuredoom.classescore.data.PassiveType;
+import com.azuredoom.classescore.data.*;
 import com.azuredoom.classescore.db.JdbcClassesRepository;
 import com.azuredoom.classescore.service.ClassServiceImpl;
+import com.azuredoom.classescore.util.StatType;
 
 public final class ClassesBootstrap {
 
@@ -225,6 +222,29 @@ public final class ClassesBootstrap {
             var displayName = root.get("displayName").getAsString();
             var description = root.get("description").getAsString();
 
+            var stats = new ArrayList<StatDefinition>();
+            var statsJson = root.getAsJsonArray("stats");
+
+            if (statsJson != null) {
+                for (var element : statsJson) {
+                    var statObj = element.getAsJsonObject();
+
+                    if (!statObj.has("id")) {
+                        throw new IllegalStateException("Stat missing 'id' in " + sourceName);
+                    }
+                    var statId = statObj.get("id").getAsString();
+
+                    StatType.fromJson(statId);
+
+                    var base = statObj.has("base") ? statObj.get("base").getAsInt() : 0;
+                    var perLevel = statObj.has("perLevel") ? statObj.get("perLevel").getAsInt() : 0;
+
+                    if (base < 0 || perLevel < 0) {
+                        throw new IllegalStateException("Negative stat values not allowed: " + statId);
+                    }
+                    stats.add(new StatDefinition(statId, base, perLevel));
+                }
+            }
             var passives = new ArrayList<PassiveDefinition>();
             var passivesJson = root.getAsJsonArray("passives");
             if (passivesJson != null) {
@@ -262,6 +282,7 @@ public final class ClassesBootstrap {
                 id,
                 displayName,
                 description,
+                stats,
                 passives,
                 new EquipmentRules(allowedWeapons, allowedArmor)
             );
@@ -270,21 +291,19 @@ public final class ClassesBootstrap {
         }
     }
 
-    private ClassDefinition loadClass(String resourcePath) {
-        try (var stream = plugin.getClass().getResourceAsStream(resourcePath)) {
-            if (stream == null) {
-                throw new IllegalStateException("Missing class resource: " + resourcePath);
-            }
-            return loadClass(stream, resourcePath);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load class resource " + resourcePath, e);
-        }
-    }
-
     private Path resolveAssetPackDirectory() {
         return Paths.get("mods").toAbsolutePath().normalize();
     }
 
+    /**
+     * A record that encapsulates the result of the bootstrap process for managing class-related operations and
+     * resources. It acts as a container for key parts involved in the system's class management and lifecycle control.
+     *
+     * @param repository The repository responsible for managing class data in the database.
+     * @param registry   The registry for storing and managing loaded class definitions.
+     * @param service    The service for handling higher-level class management operations.
+     * @param closeable  A resource that can be closed to release associated system resources.
+     */
     public record BootstrapResult(
         JdbcClassesRepository repository,
         ClassRegistry registry,

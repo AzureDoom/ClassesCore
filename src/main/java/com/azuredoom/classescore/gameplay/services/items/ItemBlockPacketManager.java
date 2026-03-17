@@ -135,6 +135,12 @@ public class ItemBlockPacketManager {
         NotificationsUtil.sendItemClassRestrictionNotification(playerRef, hand, playerClass);
     }
 
+    /**
+     * Clears the state data associated with the specified player. This method removes the player's hand check state and
+     * notification cooldown information from their respective tracking structures.
+     *
+     * @param playerId The UUID of the player whose data should be cleared. Cannot be null.
+     */
     public void clearPlayer(UUID playerId) {
         handCheckState.remove(playerId);
         notifyCooldownMs.remove(playerId);

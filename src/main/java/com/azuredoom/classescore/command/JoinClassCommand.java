@@ -17,14 +17,14 @@ import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.ClassesCoreAPI;
 import com.azuredoom.classescore.lang.BaseLangMessages;
 
-public final class ClassCommand extends AbstractPlayerCommand {
+public final class JoinClassCommand extends AbstractPlayerCommand {
 
     @Nonnull
     private final RequiredArg<PlayerRef> playerArg;
 
     private final RequiredArg<String> classIdArg;
 
-    public ClassCommand() {
+    public JoinClassCommand() {
         super("joinclass", "Join a class");
         this.requirePermission("classescore.joinclass");
         this.playerArg = this.withRequiredArg(
