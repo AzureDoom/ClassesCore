@@ -3,6 +3,8 @@ package com.azuredoom.classescore.data;
 import java.util.Collections;
 import java.util.Set;
 
+import com.azuredoom.classescore.util.ItemPatternMatcher;
+
 /**
  * Defines rules for allowed weapons and armor for a specific class.
  *
@@ -33,10 +35,7 @@ public record EquipmentRules(
      * @return true if the weapon is allowed, or if the set of allowed weapons is empty; false otherwise.
      */
     public boolean isWeaponAllowed(String weaponId) {
-        if (allowedWeapons.isEmpty()) {
-            return true;
-        }
-        return allowedWeapons.contains(weaponId);
+        return ItemPatternMatcher.matches(allowedWeapons, weaponId);
     }
 
     /**
@@ -47,9 +46,6 @@ public record EquipmentRules(
      * @return true if the armor is allowed, or if the set of allowed armor is empty; false otherwise.
      */
     public boolean isArmorAllowed(String armorId) {
-        if (allowedArmor.isEmpty()) {
-            return true;
-        }
-        return allowedArmor.contains(armorId);
+        return ItemPatternMatcher.matches(allowedArmor, armorId);
     }
 }

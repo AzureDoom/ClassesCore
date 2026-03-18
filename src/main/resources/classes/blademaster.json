@@ -50,7 +50,7 @@
     }
   ],
   "equipmentRules": {
-    "allowedWeapons": ["Weapon_Sword_Adamantite", "Weapon_Sword_Crude"],
-    "allowedArmor": ["Armor_Adamantite_Chest", "Armor_Adamantite_Legs", "Armor_Adamantite_Head", "Armor_Adamantite_Hands"]
+    "allowedWeapons": ["Weapon_Sword_*"],
+    "allowedArmor": ["Armor_Adamantite_*"]
   }
 }

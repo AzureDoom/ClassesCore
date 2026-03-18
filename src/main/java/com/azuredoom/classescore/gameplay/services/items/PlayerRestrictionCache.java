@@ -21,18 +21,9 @@ public class PlayerRestrictionCache {
      * @param classDef the class definition containing the class ID and equipment restriction rules
      */
     public void setClass(UUID playerId, ClassDefinition classDef) {
-        Set<String> allowedWeapons = classDef.equipmentRules().allowedWeapons();
-        if (allowedWeapons == null) {
-            allowedWeapons = Collections.emptySet();
-        }
-        Set<String> allowedArmor = classDef.equipmentRules().allowedArmor();
-        if (allowedArmor == null) {
-            allowedArmor = Collections.emptySet();
-        }
-
         states.put(
             playerId,
-            new PlayerRestrictionState(classDef.id(), Set.copyOf(allowedWeapons), Set.copyOf(allowedArmor))
+            new PlayerRestrictionState(classDef.id(), classDef.equipmentRules())
         );
     }
 
@@ -61,8 +52,7 @@ public class PlayerRestrictionCache {
             return true;
         }
 
-        var allowedWeapons = state.allowedWeapons();
-        return allowedWeapons.isEmpty() || allowedWeapons.contains(itemId);
+        return state.equipmentRules().isWeaponAllowed(itemId);
     }
 
     /**
@@ -80,8 +70,7 @@ public class PlayerRestrictionCache {
             return true;
         }
 
-        var allowedArmor = state.allowedArmor();
-        return allowedArmor.isEmpty() || allowedArmor.contains(itemId);
+        return state.equipmentRules().isArmorAllowed(itemId);
     }
 
     /**
