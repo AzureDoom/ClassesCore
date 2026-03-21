@@ -43,13 +43,13 @@ public class ClassesCore extends JavaPlugin {
 
     private static ClassRegistry classRegistry;
 
-    private static final PlayerRestrictionCache PLAYER_RESTRICTION_CACHE = new PlayerRestrictionCache();
+    private static final PlayerRestrictionCache playerRestrictionCache = new PlayerRestrictionCache();
 
-    public static final ItemBlockPacketManager ITEM_BLOCK_PACKET_MANAGER = new ItemBlockPacketManager(
-        PLAYER_RESTRICTION_CACHE
+    public static final ItemBlockPacketManager itemBlockPacketManager = new ItemBlockPacketManager(
+        playerRestrictionCache
     );
 
-    public static final EquipBlockManager equipBlockManager = new EquipBlockManager(PLAYER_RESTRICTION_CACHE);
+    public static final EquipBlockManager equipBlockManager = new EquipBlockManager(playerRestrictionCache);
 
     public ClassesCore(@NotNull JavaPluginInit init) {
         super(init);
@@ -71,7 +71,7 @@ public class ClassesCore extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new LeaveClassCommand());
 
         if (config.get().isEnableClassItemRestrictions()) {
-            ITEM_BLOCK_PACKET_MANAGER.start();
+            itemBlockPacketManager.start();
             this.registerAllSystems();
             this.getEventRegistry()
                 .registerGlobal(PlayerReadyEvent.class, (event) -> {
@@ -80,11 +80,11 @@ public class ClassesCore extends JavaPlugin {
                         if (service.hasSelectedClass(playerId)) {
                             service.getSelectedClassDefinition(playerId)
                                 .ifPresentOrElse(
-                                    classDef -> PLAYER_RESTRICTION_CACHE.setClass(playerId, classDef),
-                                    () -> PLAYER_RESTRICTION_CACHE.clear(playerId)
+                                    classDef -> playerRestrictionCache.setClass(playerId, classDef),
+                                    () -> playerRestrictionCache.clear(playerId)
                                 );
                         } else {
-                            PLAYER_RESTRICTION_CACHE.clear(playerId);
+                            playerRestrictionCache.clear(playerId);
                         }
                         equipBlockManager.validateArmorOnReady(event.getPlayer());
                     });
@@ -93,9 +93,9 @@ public class ClassesCore extends JavaPlugin {
                 .registerGlobal(PlayerDisconnectEvent.class, (event) -> {
                     var playerId = event.getPlayerRef().getUuid();
                     ClassesCore.getPlayerRestrictionCache().clear(playerId);
-                    ITEM_BLOCK_PACKET_MANAGER.getHandCheckState().remove(playerId);
-                    ITEM_BLOCK_PACKET_MANAGER.clearPlayer(playerId);
-                    PLAYER_RESTRICTION_CACHE.clear(playerId);
+                    itemBlockPacketManager.getHandCheckState().remove(playerId);
+                    itemBlockPacketManager.clearPlayer(playerId);
+                    playerRestrictionCache.clear(playerId);
                     ClassesCoreAPI.getClassServiceIfPresent().ifPresent(service -> service.evictPlayer(playerId));
                 });
             ClassesCore.equipBlockManager.start();
@@ -124,7 +124,7 @@ public class ClassesCore extends JavaPlugin {
     @Override
     protected void shutdown() {
         if (config.get().isEnableClassItemRestrictions()) {
-            ITEM_BLOCK_PACKET_MANAGER.shutdown();
+            itemBlockPacketManager.shutdown();
             equipBlockManager.shutdown();
         }
         var bootstrap = new ClassesBootstrap(this, config.get()).bootstrap();
@@ -137,7 +137,7 @@ public class ClassesCore extends JavaPlugin {
 
     public void registerAllSystems() {
         getEntityStoreRegistry().registerSystem(
-            new HandGateTickingSystem(ITEM_BLOCK_PACKET_MANAGER.getHandCheckState(), PLAYER_RESTRICTION_CACHE)
+            new HandGateTickingSystem(itemBlockPacketManager.getHandCheckState(), playerRestrictionCache)
         );
         getEntityStoreRegistry().registerSystem(new ClassDamageSystem());
         getEntityStoreRegistry().registerSystem(new StatsTickingSystem());
@@ -156,7 +156,7 @@ public class ClassesCore extends JavaPlugin {
     }
 
     public static PlayerRestrictionCache getPlayerRestrictionCache() {
-        return PLAYER_RESTRICTION_CACHE;
+        return playerRestrictionCache;
     }
 
     public static ClassesCore getInstance() {
