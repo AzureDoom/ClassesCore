@@ -80,7 +80,7 @@ repositories {
 
 dependencies {
     vineflowerTool 'org.vineflower:vineflower:1.11.2'
-    implementation("com.azuredoom.levelingcore:LevelingCore:0.+")
+    implementation 'com.azuredoom.levelingcore:LevelingCore:0.+'
     vineImplementation 'curse.maven:hyui-1431415:7693755'
     vineImplementation 'curse.maven:dynamictooltipslib-1459711:7702598'
     vineCompileOnly 'at.helpch:placeholderapi-hytale:1.0.7'
@@ -175,6 +175,13 @@ publishing {
         maven(MavenPublication) {
             artifactId base.archivesName.get()
             from components.java
+            pom.withXml {
+                asNode().dependencies.dependency.each { dep ->
+                    if (dep.groupId.text() == 'curse.maven' || dep.groupId.text() == 'com.azuredoom') {
+                        dep.parent().remove(dep)
+                    }
+                }
+            }
         }
     }
 }
