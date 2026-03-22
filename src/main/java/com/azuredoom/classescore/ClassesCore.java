@@ -22,7 +22,7 @@ import com.azuredoom.classescore.config.ClassesCoreConfig;
 import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.data.ClassRegistry;
 import com.azuredoom.classescore.exceptions.ClassesCoreException;
-import com.azuredoom.classescore.gameplay.services.armor.EquipBlockManager;
+import com.azuredoom.classescore.gameplay.services.armor.ArmorBlockClassSystem;
 import com.azuredoom.classescore.gameplay.services.damage.ClassDamageSystem;
 import com.azuredoom.classescore.gameplay.services.items.HandGateTickingSystem;
 import com.azuredoom.classescore.gameplay.services.items.ItemBlockPacketManager;
@@ -49,7 +49,7 @@ public class ClassesCore extends JavaPlugin {
         playerRestrictionCache
     );
 
-    public static final EquipBlockManager equipBlockManager = new EquipBlockManager(playerRestrictionCache);
+    public static final ArmorBlockClassSystem equipBlockManager = new ArmorBlockClassSystem(playerRestrictionCache);
 
     public ClassesCore(@NotNull JavaPluginInit init) {
         super(init);
@@ -98,7 +98,6 @@ public class ClassesCore extends JavaPlugin {
                     playerRestrictionCache.clear(playerId);
                     ClassesCoreAPI.getClassServiceIfPresent().ifPresent(service -> service.evictPlayer(playerId));
                 });
-            ClassesCore.equipBlockManager.start();
         }
         if (PluginManager.get().getPlugin(new PluginIdentifier("org.herolias", "DynamicTooltipsLib")) != null) {
             DynamicTooltipsLibCompat.register();
@@ -125,7 +124,6 @@ public class ClassesCore extends JavaPlugin {
     protected void shutdown() {
         if (config.get().isEnableClassItemRestrictions()) {
             itemBlockPacketManager.shutdown();
-            equipBlockManager.shutdown();
         }
         var bootstrap = new ClassesBootstrap(this, config.get()).bootstrap();
         try {
@@ -139,6 +137,7 @@ public class ClassesCore extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(
             new HandGateTickingSystem(itemBlockPacketManager.getHandCheckState(), playerRestrictionCache)
         );
+        getEntityStoreRegistry().registerSystem(equipBlockManager);
         getEntityStoreRegistry().registerSystem(new ClassDamageSystem());
         getEntityStoreRegistry().registerSystem(new StatsTickingSystem());
     }
