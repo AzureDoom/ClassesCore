@@ -16,6 +16,7 @@ import javax.annotation.Nonnull;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
 import com.azuredoom.classescore.util.NotificationsUtil;
 
+@SuppressWarnings("removal")
 public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
 
     private final PlayerRestrictionCache restrictionCache;
