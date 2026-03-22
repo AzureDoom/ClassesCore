@@ -3,31 +3,7 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'com.diffplug.spotless' version '8.1.0'
-    id 'hytale-mod' version '0.+'
-}
-
-configurations {
-    vineflowerTool
-    vineImplementation {
-        canBeResolved = false
-        canBeConsumed = false
-    }
-    vineCompileOnly {
-        canBeResolved = false
-        canBeConsumed = false
-    }
-    vineDecompileClasspath {
-        canBeResolved = true
-        canBeConsumed = false
-        extendsFrom(vineImplementation, vineCompileOnly)
-    }
-    vineServerJar {
-        canBeResolved = true
-        canBeConsumed = false
-        transitive = false
-    }
-    implementation.extendsFrom(vineImplementation)
-    compileOnly.extendsFrom(vineCompileOnly)
+    id 'com.azuredoom.hytale-tools' version '1.0.1'
 }
 
 javadoc {
@@ -40,118 +16,46 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(java_version)
 }
 
-hytale {
-    updateChannel = "pre-release"
+hytaleTools {
+    javaVersion = project.java_version as Integer
+    hytaleVersion = project.hytale_version.toString()
+    manifestGroup = project.manifest_group.toString()
+    modId = project.mod_id.toString()
+    modDescription = project.mod_description.toString()
+    modUrl = project.mod_url.toString()
+    mainClass = project.main_class.toString()
+    modCredits = project.mod_credits.toString()
+    manifestDependencies = project.manifest_dependencies.toString()
+    manifestOptionalDependencies = project.manifest_opt_dependencies.toString()
+    curseforgeId = project.curseforgeID.toString()
+    disabledByDefault = project.disabled_by_default.toString().toBoolean()
+    includesPack = project.includes_pack.toString().toBoolean()
+    patchline = project.patchline.toString()
 }
 
 repositories {
     mavenCentral()
-    maven {
-        name = "Hytale Server Release"
-        url = uri("https://maven.hytale.com/release")
-    }
-    maven {
-        name = "azuredoomMods"
-        url = uri("https://maven.azuredoom.com/mods")
-    }
-    maven {
-        name = "hytalemoddingReleases"
-        url = uri("https://maven.hytalemodding.dev/releases")
-    }
-    maven {
-        name = "hMReleases"
-        url = uri("https://maven.hytale-mods.dev/releases")
-    }
-    maven {
-        url "https://cursemaven.com"
-    }
-    exclusiveContent {
-        forRepository {
-            ivy {
-                name = "Modtale"
-                url = uri("https://api.modtale.net/api/v1")
-                patternLayout {
-                    artifact("projects/[module]/versions/[revision]/download")
-                }
-                metadataSources {
-                    artifact()
-                }
-            }
-        }
-        filter {
-            includeGroup("modtale")
-        }
-    }
-    maven {
-        url = 'https://repo.helpch.at/releases/'
-    }
 }
 
-def hytaleServerDep = 'com.hypixel.hytale:Server:2026.03.20-db226053c'
-
 dependencies {
-    vineServerJar hytaleServerDep
-    vineCompileOnly hytaleServerDep
-    vineflowerTool 'org.vineflower:vineflower:1.11.2'
+    vineServerJar "com.hypixel.hytale:Server:$hytale_version"
+    vineCompileOnly "com.hypixel.hytale:Server:$hytale_version"
+
     implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.0-alpha2'
     vineImplementation 'curse.maven:hyui-1431415:7693755'
     vineImplementation 'curse.maven:dynamictooltipslib-1459711:7702598'
     vineCompileOnly 'at.helpch:placeholderapi-hytale:1.0.7'
     //vineImplementation 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'
-    //compileOnly fileTree(dir: "$rootDir/libs", include: ["*.jar"])
-    //runtimeOnly fileTree(dir: "$rootDir/libs", include: ["*.jar"])
+
+    vineDecompileTargets 'curse.maven:hyui-1431415:7693755'
+    vineDecompileTargets 'curse.maven:dynamictooltipslib-1459711:7702598'
+    vineDecompileTargets 'at.helpch:placeholderapi-hytale:1.0.7'
+    //vineDecompileTargets 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'
 }
 
 def serverRunDir = file("$projectDir/run")
 if (!serverRunDir.exists()) {
     serverRunDir.mkdirs()
-}
-
-tasks.register('updatePluginManifest') {
-    group = "hytale"
-    def manifestFile = file('src/main/resources/manifest.json')
-    doLast {
-        def manifestJson = new groovy.json.JsonSlurper().parseText(manifestFile.text)
-        def propStr = { String key, Object fallback = null ->
-            project.hasProperty(key) && project.property(key) != null
-                    ? project.property(key).toString()
-                    : fallback
-        }
-        def ensureMap = { Object parent, String key ->
-            if (!(parent[key] instanceof Map)) parent[key] = [:]
-            parent[key] as Map
-        }
-
-        def parseDepMap = { String raw ->
-            def out = [:]
-            if (!raw) return out
-            raw.split(/\s*,\s*/).findAll { it?.trim() }.each { entry ->
-                def parts = entry.split(/\s*=\s*/, 2)
-                if (parts.length == 2) out[parts[0].trim()] = parts[1].trim()
-            }
-            out
-        }
-
-        def parseAuthors = { String raw ->
-            if (!raw) return null
-            raw.split(/\s*,\s*/).findAll { it?.trim() }.collect { n -> [Name: n.trim()] }
-        }
-        manifestJson.Group = project.manifest_group
-        manifestJson.Name = project.mod_id
-        manifestJson.Version = project.version
-        manifestJson.Description = project.mod_description
-        manifestJson.Authors = parseAuthors(propStr('mod_credits', null))
-        manifestJson.Website = project.mod_url
-        manifestJson.ServerVersion = project.server_version
-        manifestJson.Dependencies = parseDepMap(propStr('manifest_dependencies', null))
-        manifestJson.OptionalDependencies = parseDepMap(propStr('manifest_opt_dependencies', null))
-        manifestJson.DisabledByDefault = project.disabled_by_default.toBoolean()
-        manifestJson.Main = project.main_class
-        manifestJson.IncludesAssetPack = project.includes_pack.toBoolean()
-        manifestJson.UpdateChecker = project.main_class
-        ensureMap(manifestJson, 'UpdateChecker').CurseForge = propStr('curseforgeID', null)
-        manifestFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(manifestJson))
-    }
 }
 
 tasks.named('processResources') {
@@ -196,82 +100,6 @@ publishing {
                 }
             }
         }
-    }
-}
-
-tasks.register("decompileLibsWithVineflower") {
-    group = "decompilation"
-    description = "Decompile only com/hytale from the Hytale Server jar into build/vineflower/hytale-server/"
-
-    def outDir = file("$buildDir/vineflower/hytale-server")
-    def tempDir = file("$buildDir/tmp/vineflower")
-    def serverConfig = configurations.vineServerJar
-    def classpathConfig = configurations.vineDecompileClasspath
-
-    inputs.files(serverConfig, classpathConfig)
-    outputs.dir(outDir)
-
-    doLast {
-        outDir.mkdirs()
-        tempDir.mkdirs()
-
-        def vineflowerJar = configurations.vineflowerTool.singleFile
-
-        def javaExe = javaToolchains.launcherFor {
-            languageVersion = JavaLanguageVersion.of(java_version)
-        }.get().executablePath.asFile.absolutePath
-
-        def serverJar = serverConfig.singleFile
-        if (!serverJar.exists()) {
-            throw new GradleException("Could not resolve Hytale Server jar from vineServerJar")
-        }
-
-        def filteredJar = new File(tempDir, "Server-com-hytale-only.jar")
-        if (filteredJar.exists()) {
-            filteredJar.delete()
-        }
-
-        // Build a temp jar containing only com/hytale classes/resources
-        ant.jar(destfile: filteredJar.absolutePath) {
-            zipfileset(src: serverJar.absolutePath) {
-                include(name: "com/hytale/**")
-            }
-        }
-
-        if (!filteredJar.exists() || filteredJar.length() == 0) {
-            throw new GradleException("Filtered jar is empty. Nothing matched com/hytale/** inside ${serverJar.name}")
-        }
-
-        def externals = classpathConfig.incoming.artifactView { it.lenient(true) }
-                .files.files
-                .findAll { it.name.endsWith(".jar") && it != serverJar }
-                .collectMany { ["-e", it.absolutePath] }
-
-        def cmd = [
-                javaExe,
-                "-jar", vineflowerJar.absolutePath,
-                *externals,
-                filteredJar.absolutePath,
-                outDir.absolutePath
-        ]
-
-        logger.lifecycle("Running: ${cmd.join(' ')}")
-
-        def pb = new ProcessBuilder(cmd)
-        pb.directory(project.projectDir)
-        pb.redirectErrorStream(true)
-
-        def proc = pb.start()
-        proc.inputStream.withReader { r ->
-            r.eachLine { line -> logger.lifecycle(line) }
-        }
-
-        def exit = proc.waitFor()
-        if (exit != 0) {
-            throw new GradleException("Vineflower failed (exit ${exit})")
-        }
-
-        logger.lifecycle("Decompiled com/hytale from ${serverJar.name} -> ${outDir}")
     }
 }
 
