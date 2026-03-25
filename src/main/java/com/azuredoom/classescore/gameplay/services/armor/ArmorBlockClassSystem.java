@@ -1,11 +1,15 @@
 package com.azuredoom.classescore.gameplay.services.armor;
 
 import com.azuredoom.levelingcore.systems.equipment.ArmorBlockLevelSystem;
+import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.transaction.*;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +20,6 @@ import javax.annotation.Nonnull;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
 import com.azuredoom.classescore.util.NotificationsUtil;
 
-@SuppressWarnings("removal")
 public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
 
     private final PlayerRestrictionCache restrictionCache;
@@ -31,7 +34,8 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
         @NotNull Player player,
         @NotNull ItemContainer armorContainer,
         @Nullable Transaction transaction,
-        @NotNull Set<String> refundedKeys
+        @NotNull Set<String> refundedKeys,
+        @NotNull CommandBuffer<EntityStore> commandBuffer
     ) {
         if (transaction == null || !transaction.succeeded()) {
             return;
@@ -40,17 +44,17 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
         switch (transaction) {
             case MoveTransaction<?> moveTransaction -> {
                 if (moveTransaction.getMoveType() == MoveType.MOVE_TO_SELF) {
-                    rollbackArmorTransaction(player, armorContainer, moveTransaction.getAddTransaction(), refundedKeys);
+                    rollbackArmorTransaction(player, armorContainer, moveTransaction.getAddTransaction(), refundedKeys, commandBuffer);
                 }
             }
             case ListTransaction<?> listTransaction -> {
                 for (var nested : listTransaction.getList()) {
-                    rollbackArmorTransaction(player, armorContainer, nested, refundedKeys);
+                    rollbackArmorTransaction(player, armorContainer, nested, refundedKeys, commandBuffer);
                 }
             }
             case ItemStackTransaction itemStackTransaction -> {
                 for (var slotTransaction : itemStackTransaction.getSlotTransactions()) {
-                    rollbackArmorTransaction(player, armorContainer, slotTransaction, refundedKeys);
+                    rollbackArmorTransaction(player, armorContainer, slotTransaction, refundedKeys, commandBuffer);
                 }
             }
             case SlotTransaction slotTransaction -> {
@@ -69,16 +73,24 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                 if (itemId.isEmpty()) {
                     return;
                 }
-
-                var playerId = player.getUuid();
-                if (restrictionCache.canUseArmor(playerId, itemId)) {
+                var playerRef = player.getReference();
+                if (playerRef == null) {
+                    return;
+                }
+                var playerRefComponent = playerRef.getStore()
+                        .getComponent(playerRef, PlayerRef.getComponentType());
+                if (playerRefComponent == null) {
+                    return;
+                }
+                var playerUuid = playerRefComponent.getUuid();
+                if (restrictionCache.canUseArmor(playerUuid, itemId)) {
                     return;
                 }
 
-                var classId = restrictionCache.getClassId(playerId).orElse("Unknown");
+                var classId = restrictionCache.getClassId(playerUuid).orElse("Unknown");
 
                 NotificationsUtil.sendItemClassRestrictionNotification(
-                    player.getPlayerRef(),
+                        playerRefComponent,
                     after,
                     classId
                 );
@@ -89,11 +101,16 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
 
                 var key = "armorSlot:" + slotTransaction.getSlot();
                 if (refundedKeys.add(key)) {
-                    giveOrDrop(player, after);
+                    var everythingInventoryComponent = InventoryComponent.getCombined(
+                            commandBuffer,
+                            playerRef,
+                            InventoryComponent.EVERYTHING
+                    );
+                    giveOrDrop(player, after, everythingInventoryComponent);
 
                     if (swapping) {
                         var removeOne = oneOf(before);
-                        player.getInventory().getCombinedHotbarFirst().removeItemStack(removeOne, false, true);
+                        everythingInventoryComponent.removeItemStack(removeOne, false, true);
                     }
                 }
             }
@@ -103,20 +120,31 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
 
     @Override
     public void validateArmorOnReady(@Nonnull Player player) {
-        ignoreArmorEvents.add(player.getUuid());
+        var playerRef = player.getReference();
+        if (playerRef == null) {
+            return;
+        }
+        var playerRefComponent = playerRef.getStore()
+                .getComponent(playerRef, PlayerRef.getComponentType());
+        if (playerRefComponent == null) {
+            return;
+        }
+        var playerUuid = playerRefComponent.getUuid();
+        ignoreArmorEvents.add(playerUuid);
         HytaleServer.SCHEDULED_EXECUTOR.schedule(
-            () -> ignoreArmorEvents.remove(player.getUuid()),
+            () -> ignoreArmorEvents.remove(playerUuid),
             500L,
             TimeUnit.MILLISECONDS
         );
 
-        var inventory = player.getInventory();
-        var armor = inventory.getArmor();
+        var armorComponent = playerRef.getStore().getComponent(playerRef, InventoryComponent.Armor.getComponentType());
+        if (armorComponent == null) {
+            return;
+        }
+        var armor = armorComponent.getInventory();
         if (armor == null) {
             return;
         }
-
-        var playerId = player.getUuid();
 
         restoringArmor = true;
         try {
@@ -132,20 +160,25 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                     continue;
                 }
 
-                if (restrictionCache.canUseArmor(playerId, itemId)) {
+                if (restrictionCache.canUseArmor(playerUuid, itemId)) {
                     continue;
                 }
 
-                var classId = restrictionCache.getClassId(playerId).orElse("Unknown");
+                var classId = restrictionCache.getClassId(playerUuid).orElse("Unknown");
 
                 NotificationsUtil.sendItemClassRestrictionNotification(
-                    player.getPlayerRef(),
+                        playerRefComponent,
                     stack,
                     classId
                 );
 
                 armor.setItemStackForSlot(slot, null, true);
-                giveOrDrop(player, stack);
+                var everythingInventoryComponent = InventoryComponent.getCombined(
+                        playerRef.getStore(),
+                        playerRef,
+                        InventoryComponent.EVERYTHING
+                );
+                giveOrDrop(player, stack, everythingInventoryComponent);
             }
         } finally {
             restoringArmor = false;

@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.entity.EntityUtils;
 import com.hypixel.hytale.server.core.modules.entity.AllLegacyLivingEntityTypesQuery;
 import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
+import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageEventSystem;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -85,14 +86,14 @@ public class ClassDamageSystem extends DamageEventSystem {
         if (incoming <= 0f)
             return;
 
-        var cause = damage.getCause();
+        var cause = DamageCause.getAssetMap().getAsset(damage.getDamageCauseIndex());
         if (cause == null)
             return;
 
         var causeId = cause.getId();
         var causeIdLower = causeId == null ? "" : causeId.toLowerCase(Locale.ROOT);
 
-        var isRanged = containsAny(causeIdLower, RANGED_TERMS);
+        var isRanged = containsAny(causeIdLower);
         var isMelee = !isRanged;
 
         var multiplier = 1.0f;
@@ -108,7 +109,7 @@ public class ClassDamageSystem extends DamageEventSystem {
 
             var passiveIdLower = passiveId.toLowerCase(Locale.ROOT);
 
-            if (isRanged && containsAny(passiveIdLower, RANGED_TERMS)) {
+            if (isRanged && containsAny(passiveIdLower)) {
                 multiplier *= passive.value();
             } else if (isMelee && passiveIdLower.contains("melee")) {
                 multiplier *= passive.value();
@@ -127,23 +128,25 @@ public class ClassDamageSystem extends DamageEventSystem {
     @NullableDecl
     @Override
     public Query<EntityStore> getQuery() {
-        return AllLegacyLivingEntityTypesQuery.INSTANCE;
+        return Query.and(
+                NPCEntity.getComponentType(),
+                Query.not(EntityModule.get().getPlayerComponentType())
+        );
     }
 
     /**
      * Checks if the given text contains any of the specified terms, ignoring case sensitivity.
      *
-     * @param text  the text to be searched; if null or blank, the method will return false
-     * @param terms the set of terms to search for in the text; cannot be null
+     * @param text the text to be searched; if null or blank, the method will return false
      * @return true if any term from the set is found within the text; false otherwise
      */
-    private static boolean containsAny(String text, Set<String> terms) {
+    private static boolean containsAny(String text) {
         if (text == null || text.isBlank()) {
             return false;
         }
 
         var lower = text.toLowerCase(Locale.ROOT);
-        for (var term : terms) {
+        for (var term : ClassDamageSystem.RANGED_TERMS) {
             if (lower.contains(term)) {
                 return true;
             }

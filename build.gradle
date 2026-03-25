@@ -43,7 +43,7 @@ dependencies {
     vineServerJar "com.hypixel.hytale:Server:$hytale_version"
     compileOnly "com.hypixel.hytale:Server:$hytale_version"
 
-    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.0-alpha12'
+    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.0-beta.1'
     implementation 'curse.maven:hyui-1431415:7693755'
     implementation 'curse.maven:dynamictooltipslib-1459711:7702598'
     compileOnly 'at.helpch:placeholderapi-hytale:1.0.7'

@@ -7,6 +7,7 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.plugin.PluginManager;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.util.Config;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,7 +31,6 @@ import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
 import com.azuredoom.classescore.gameplay.services.stats.StatsTickingSystem;
 import com.azuredoom.classescore.service.ClassServiceImpl;
 
-@SuppressWarnings("removal")
 public class ClassesCore extends JavaPlugin {
 
     public static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
@@ -75,8 +75,20 @@ public class ClassesCore extends JavaPlugin {
             this.registerAllSystems();
             this.getEventRegistry()
                 .registerGlobal(PlayerReadyEvent.class, (event) -> {
-                    var playerId = event.getPlayer().getUuid();
+                    var player = event.getPlayer();
                     ClassesCoreAPI.getClassServiceIfPresent().ifPresent(service -> {
+                        var playerRef = player.getReference();
+                        if (playerRef == null) {
+                            LOGGER.at(Level.WARNING).log("Player reference is null");
+                            return;
+                        }
+                        var playerRefComponent = playerRef.getStore()
+                                .getComponent(playerRef, PlayerRef.getComponentType());
+                        if (playerRefComponent == null) {
+                            LOGGER.at(Level.WARNING).log("Player ref component is null");
+                            return;
+                        }
+                        var playerId = playerRefComponent.getUuid();
                         if (service.hasSelectedClass(playerId)) {
                             service.getSelectedClassDefinition(playerId)
                                 .ifPresentOrElse(
