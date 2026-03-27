@@ -234,7 +234,7 @@ public final class ClassServiceImpl {
     }
 
     /**
-     * Determines whether a specific armor is allowed for the player based on their selected class and the associated
+     * Determines whether specific armor is allowed for the player based on their selected class and the associated
      * equipment rules. If no class is selected for the player, all armor is allowed by default.
      *
      * @param playerId the unique identifier of the player whose armor permission is being checked
