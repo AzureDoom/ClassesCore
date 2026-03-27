@@ -5,8 +5,6 @@ import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.SystemGroup;
 import com.hypixel.hytale.component.query.Query;
-import com.hypixel.hytale.server.core.entity.EntityUtils;
-import com.hypixel.hytale.server.core.modules.entity.AllLegacyLivingEntityTypesQuery;
 import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
@@ -54,7 +52,7 @@ public class ClassDamageSystem extends DamageEventSystem {
         if (isPlayer)
             return;
 
-        var holder = EntityUtils.toHolder(index, archetypeChunk);
+        final var holder = store.copyEntity(archetypeChunk.getReferenceTo(index));
         var victimNPCRef = holder.getComponent(Objects.requireNonNull(NPCEntity.getComponentType()));
         if (victimNPCRef == null)
             return;

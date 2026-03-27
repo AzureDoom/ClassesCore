@@ -5,8 +5,8 @@ import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
-import com.hypixel.hytale.server.core.entity.EntityUtils;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -45,15 +45,22 @@ public class HandGateTickingSystem extends EntityTickingSystem<EntityStore> {
         if (!ClassesCore.getConfig().get().isEnableClassItemRestrictions()) {
             return;
         }
-        var holder = EntityUtils.toHolder(index, chunk);
+        final var holder = store.copyEntity(chunk.getReferenceTo(index));
         var player = holder.getComponent(Player.getComponentType());
-        var playerRef = holder.getComponent(PlayerRef.getComponentType());
-        if (player == null || playerRef == null) {
+        if (player == null)
+            return;
+        var playerRef = player.getReference();
+        if (playerRef == null) {
+            return;
+        }
+        var playerRefComponent = playerRef.getStore()
+                .getComponent(playerRef, PlayerRef.getComponentType());
+        if (playerRefComponent == null) {
             return;
         }
 
-        var playerId = playerRef.getUuid();
-        var hand = player.getInventory().getItemInHand();
+        var playerId = playerRefComponent.getUuid();
+        var hand = InventoryComponent.getItemInHand(cb, playerRef);
         if (hand == null || ItemStack.isEmpty(hand)) {
             lastChecks.remove(playerId);
             return;

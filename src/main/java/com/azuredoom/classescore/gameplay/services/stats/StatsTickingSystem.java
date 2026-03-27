@@ -2,11 +2,9 @@ package com.azuredoom.classescore.gameplay.services.stats;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
-import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
-import com.hypixel.hytale.server.core.entity.EntityUtils;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -27,9 +25,9 @@ public class StatsTickingSystem extends EntityTickingSystem<EntityStore> {
         @NonNullDecl Store<EntityStore> store,
         @NonNullDecl CommandBuffer<EntityStore> commandBuffer
     ) {
-        final Holder<EntityStore> holder = EntityUtils.toHolder(index, archetypeChunk);
-        final Player player = holder.getComponent(Player.getComponentType());
-        final PlayerRef playerRef = holder.getComponent(PlayerRef.getComponentType());
+        final var holder = store.copyEntity(archetypeChunk.getReferenceTo(index));
+        final var player = holder.getComponent(Player.getComponentType());
+        final var playerRef = holder.getComponent(PlayerRef.getComponentType());
         if (player == null || playerRef == null) {
             return;
         }
