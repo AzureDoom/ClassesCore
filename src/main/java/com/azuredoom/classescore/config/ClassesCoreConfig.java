@@ -12,14 +12,14 @@ public class ClassesCoreConfig {
     )
         .append(
             new KeyedCodec<>("JDBC_Connection", Codec.STRING),
-            (exConfig, aString, extraInfo) -> exConfig.jdbcConnection = aString,
-            (exConfig, extraInfo) -> exConfig.jdbcConnection
+            (exConfig, aString, _) -> exConfig.jdbcConnection = aString,
+            (exConfig, _) -> exConfig.jdbcConnection
         )
         .add()
         .append(
             new KeyedCodec<>("Enable_Class_Item_Restrictions", Codec.BOOLEAN),
-            (exConfig, aBoolean, extraInfo) -> exConfig.enableClassItemRestrictions = aBoolean,
-            (exConfig, extraInfo) -> exConfig.enableClassItemRestrictions
+            (exConfig, aBoolean, _) -> exConfig.enableClassItemRestrictions = aBoolean,
+            (exConfig, _) -> exConfig.enableClassItemRestrictions
         )
         .add()
         .build();
