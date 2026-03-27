@@ -83,7 +83,7 @@ public class ClassesCore extends JavaPlugin {
                             return;
                         }
                         var playerRefComponent = playerRef.getStore()
-                                .getComponent(playerRef, PlayerRef.getComponentType());
+                            .getComponent(playerRef, PlayerRef.getComponentType());
                         if (playerRefComponent == null) {
                             LOGGER.at(Level.WARNING).log("Player ref component is null");
                             return;

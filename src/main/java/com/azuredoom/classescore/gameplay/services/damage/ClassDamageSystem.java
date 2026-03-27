@@ -127,8 +127,8 @@ public class ClassDamageSystem extends DamageEventSystem {
     @Override
     public Query<EntityStore> getQuery() {
         return Query.and(
-                NPCEntity.getComponentType(),
-                Query.not(EntityModule.get().getPlayerComponentType())
+            NPCEntity.getComponentType(),
+            Query.not(EntityModule.get().getPlayerComponentType())
         );
     }
 

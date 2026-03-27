@@ -54,7 +54,7 @@ public class HandGateTickingSystem extends EntityTickingSystem<EntityStore> {
             return;
         }
         var playerRefComponent = playerRef.getStore()
-                .getComponent(playerRef, PlayerRef.getComponentType());
+            .getComponent(playerRef, PlayerRef.getComponentType());
         if (playerRefComponent == null) {
             return;
         }

@@ -44,7 +44,13 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
         switch (transaction) {
             case MoveTransaction<?> moveTransaction -> {
                 if (moveTransaction.getMoveType() == MoveType.MOVE_TO_SELF) {
-                    rollbackArmorTransaction(player, armorContainer, moveTransaction.getAddTransaction(), refundedKeys, commandBuffer);
+                    rollbackArmorTransaction(
+                        player,
+                        armorContainer,
+                        moveTransaction.getAddTransaction(),
+                        refundedKeys,
+                        commandBuffer
+                    );
                 }
             }
             case ListTransaction<?> listTransaction -> {
@@ -78,7 +84,7 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                     return;
                 }
                 var playerRefComponent = playerRef.getStore()
-                        .getComponent(playerRef, PlayerRef.getComponentType());
+                    .getComponent(playerRef, PlayerRef.getComponentType());
                 if (playerRefComponent == null) {
                     return;
                 }
@@ -90,7 +96,7 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                 var classId = restrictionCache.getClassId(playerUuid).orElse("Unknown");
 
                 NotificationsUtil.sendItemClassRestrictionNotification(
-                        playerRefComponent,
+                    playerRefComponent,
                     after,
                     classId
                 );
@@ -102,9 +108,9 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                 var key = "armorSlot:" + slotTransaction.getSlot();
                 if (refundedKeys.add(key)) {
                     var everythingInventoryComponent = InventoryComponent.getCombined(
-                            commandBuffer,
-                            playerRef,
-                            InventoryComponent.EVERYTHING
+                        commandBuffer,
+                        playerRef,
+                        InventoryComponent.EVERYTHING
                     );
                     giveOrDrop(player, after, everythingInventoryComponent);
 
@@ -125,7 +131,7 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
             return;
         }
         var playerRefComponent = playerRef.getStore()
-                .getComponent(playerRef, PlayerRef.getComponentType());
+            .getComponent(playerRef, PlayerRef.getComponentType());
         if (playerRefComponent == null) {
             return;
         }
@@ -167,16 +173,16 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                 var classId = restrictionCache.getClassId(playerUuid).orElse("Unknown");
 
                 NotificationsUtil.sendItemClassRestrictionNotification(
-                        playerRefComponent,
+                    playerRefComponent,
                     stack,
                     classId
                 );
 
                 armor.setItemStackForSlot(slot, null, true);
                 var everythingInventoryComponent = InventoryComponent.getCombined(
-                        playerRef.getStore(),
-                        playerRef,
-                        InventoryComponent.EVERYTHING
+                    playerRef.getStore(),
+                    playerRef,
+                    InventoryComponent.EVERYTHING
                 );
                 giveOrDrop(player, stack, everythingInventoryComponent);
             }
