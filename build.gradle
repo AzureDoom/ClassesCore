@@ -40,10 +40,11 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.0'
-    vineImplementation 'curse.maven:hyui-1431415:7693755'
-    vineImplementation 'curse.maven:dynamictooltipslib-1459711:7702598'
-    compileOnly 'at.helpch:placeholderapi-hytale:1.0.7'
+    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.2'
+    implementation 'com.buuz135:MultipleHUD:1.0.7'
+    vineImplementation 'curse.maven:dynamictooltipslib-1459711:7817318'
+    compileOnly 'at.helpch:placeholderapi-hytale:1.0.8'
+    vineCompileOnly 'curse.maven:hyui-1431415:7820303'
     //vineImplementation 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'
 }
 
@@ -79,7 +80,7 @@ publishing {
             from components.java
             pom.withXml {
                 asNode().dependencies.dependency.each { dep ->
-                    if (dep.groupId.text() == 'curse.maven' || dep.groupId.text() == 'com.azuredoom') {
+                    if (dep.groupId.text() == 'curse.maven' || dep.groupId.text() == 'com.azuredoom.levelingcore' || dep.groupId.text() == 'com.buuz135') {
                         dep.parent().remove(dep)
                     }
                 }
@@ -156,8 +157,8 @@ if (keyPropsFile.exists()) {
             ]
 
             def optionalDeps = [
-                    "hyui",
-                    "dynamictooltipslib"
+                    "dynamictooltipslib",
+                    "hyui"
             ]
 
             def dependencies = []

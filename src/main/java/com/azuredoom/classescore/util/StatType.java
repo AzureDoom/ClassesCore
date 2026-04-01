@@ -1,5 +1,9 @@
 package com.azuredoom.classescore.util;
 
+/**
+ * Represents different types of player statistics in a game or application. Each stat type is associated with a
+ * specific identifier string (jsonId), allowing for serialization, deserialization, and stat identification.
+ */
 public enum StatType {
 
     STRENGTH("strength"),

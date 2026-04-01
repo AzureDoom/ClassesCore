@@ -1,0 +1,455 @@
+$C = "../../Common.ui";
+
+@PanelBackground = #162231;
+@CardBackground = #1d2b3c;
+@RowBackground = #223246;
+@MutedText = #8fa8b7;
+@BodyText = #d6e1ea;
+@BrightText = #f1f6ff;
+@AccentText = #9fe3ff;
+@WarningText = #f6e39a;
+@BadgeText = #ffd36f;
+@Outline = #314b6a;
+
+@TitleStyle = LabelStyle(
+    FontSize: 16,
+    RenderBold: true,
+    TextColor: @BrightText
+);
+
+@SubtitleStyle = LabelStyle(
+    FontSize: 13,
+    RenderBold: true,
+    TextColor: @MutedText
+);
+
+@BodyStyle = LabelStyle(
+    FontSize: 14,
+    Wrap: true,
+    TextColor: @BodyText
+);
+
+@RowNameStyle = LabelStyle(
+    FontSize: 16,
+    RenderBold: true,
+    TextColor: @BrightText
+);
+
+@RowDescriptionStyle = LabelStyle(
+    FontSize: 13,
+    Wrap: true,
+    TextColor: @BodyText
+);
+
+@RowStatusStyle = LabelStyle(
+    FontSize: 12,
+    RenderBold: true,
+    RenderUppercase: true,
+    TextColor: @AccentText
+);
+
+@BadgeStyle = LabelStyle(
+    FontSize: 12,
+    RenderBold: true,
+    RenderUppercase: true,
+    TextColor: @BadgeText
+);
+
+@StatusStyle = LabelStyle(
+    FontSize: 14,
+    Wrap: true,
+    TextColor: @WarningText
+);
+
+@HeaderTitleStyle = LabelStyle(
+    FontSize: 15,
+    RenderUppercase: true,
+    RenderBold: true,
+    VerticalAlignment: Center,
+    TextColor: #b4c8c9,
+    FontName: "Default",
+    LetterSpacing: 0.5
+);
+
+$C.@PageOverlay {
+    $C.@DecoratedContainer {
+        Anchor: (Width: 900, Height: 650);
+        Padding: (Full: 0);
+        Background: @PanelBackground;
+        OutlineColor: @Outline;
+        OutlineSize: 1;
+
+        #Title {
+            Group {
+                LayoutMode: Left;
+                Group { FlexWeight: 1; }
+                Label #pagetitle {
+                    Style: @HeaderTitleStyle;
+                    Text: "Choose Your Class";
+                }
+                Group { FlexWeight: 1; }
+            }
+        }
+
+        #Content {
+            LayoutMode: Top;
+            Padding: (Full: 20);
+
+            Group {
+                Anchor: (Height: 42);
+                LayoutMode: Left;
+
+                TextButton #closebtn {
+                    Anchor: (Width: 120, Height: 34);
+                    Text: "Close";
+                    Style: $C.@DefaultTextButtonStyle;
+                }
+
+                Group { Anchor: (Width: 20); }
+
+                Label #currentclass {
+                    Anchor: (Width: 360, Height: 24);
+                    Style: (FontSize: 14, RenderBold: true, TextColor: @BrightText, VerticalAlignment: Center);
+                    Text: "Current Class: None";
+                }
+
+                Group { FlexWeight: 1; }
+
+                Label #classcount {
+                    Anchor: (Width: 220, Height: 24);
+                    Style: (FontSize: 14, RenderBold: true, TextColor: @BrightText, VerticalAlignment: Center);
+                    Text: "Available Classes: 0";
+                }
+            }
+
+            Group {
+                Anchor: (Height: 16);
+            }
+
+            Group #maincontent {
+                FlexWeight: 1;
+                LayoutMode: Left;
+
+                Group #classpanel {
+                    FlexWeight: 1;
+                    LayoutMode: Top;
+                    Padding: (Left: 12, Right: 12, Top: 12, Bottom: 12);
+                    Background: @CardBackground;
+                    OutlineColor: @Outline;
+                    OutlineSize: 1;
+
+                    Group #classlist {
+                        FlexWeight: 1;
+                        LayoutMode: TopScrolling;
+                        Padding: (Right: 6);
+                        KeepScrollPosition: true;
+                        ScrollbarStyle: $C.@DefaultScrollbarStyle;
+
+                        Group #row1 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname1 {
+                                    Anchor: (Height: 22);
+                                    Text: "";
+                                    Style: @RowNameStyle;
+                                }
+
+                                Label #classdescription1 {
+                                    Anchor: (Height: 56);
+                                    Padding: (Top: 4);
+                                    Text: "";
+                                    Style: @RowDescriptionStyle;
+                                }
+
+                                Label #rowstatus1 {
+                                    Anchor: (Height: 18);
+                                    Padding: (Top: 4);
+                                    Text: "";
+                                    Style: @RowStatusStyle;
+                                }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview1 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+
+                        Group { Anchor: (Height: 8); }
+
+                        Group #row2 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname2 { Anchor: (Height: 22); Text: ""; Style: @RowNameStyle; }
+                                Label #classdescription2 { Anchor: (Height: 56); Padding: (Top: 4); Text: ""; Style: @RowDescriptionStyle; }
+                                Label #rowstatus2 { Anchor: (Height: 18); Padding: (Top: 4); Text: ""; Style: @RowStatusStyle; }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview2 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+
+                        Group { Anchor: (Height: 8); }
+
+                        Group #row3 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname3 { Anchor: (Height: 22); Text: ""; Style: @RowNameStyle; }
+                                Label #classdescription3 { Anchor: (Height: 56); Padding: (Top: 4); Text: ""; Style: @RowDescriptionStyle; }
+                                Label #rowstatus3 { Anchor: (Height: 18); Padding: (Top: 4); Text: ""; Style: @RowStatusStyle; }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview3 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+
+                        Group { Anchor: (Height: 8); }
+
+                        Group #row4 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname4 { Anchor: (Height: 22); Text: ""; Style: @RowNameStyle; }
+                                Label #classdescription4 { Anchor: (Height: 56); Padding: (Top: 4); Text: ""; Style: @RowDescriptionStyle; }
+                                Label #rowstatus4 { Anchor: (Height: 18); Padding: (Top: 4); Text: ""; Style: @RowStatusStyle; }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview4 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+
+                        Group { Anchor: (Height: 8); }
+
+                        Group #row5 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname5 { Anchor: (Height: 22); Text: ""; Style: @RowNameStyle; }
+                                Label #classdescription5 { Anchor: (Height: 56); Padding: (Top: 4); Text: ""; Style: @RowDescriptionStyle; }
+                                Label #rowstatus5 { Anchor: (Height: 18); Padding: (Top: 4); Text: ""; Style: @RowStatusStyle; }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview5 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+
+                        Group { Anchor: (Height: 8); }
+
+                        Group #row6 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname6 { Anchor: (Height: 22); Text: ""; Style: @RowNameStyle; }
+                                Label #classdescription6 { Anchor: (Height: 56); Padding: (Top: 4); Text: ""; Style: @RowDescriptionStyle; }
+                                Label #rowstatus6 { Anchor: (Height: 18); Padding: (Top: 4); Text: ""; Style: @RowStatusStyle; }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview6 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+
+                        Group { Anchor: (Height: 8); }
+
+                        Group #row7 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname7 { Anchor: (Height: 22); Text: ""; Style: @RowNameStyle; }
+                                Label #classdescription7 { Anchor: (Height: 56); Padding: (Top: 4); Text: ""; Style: @RowDescriptionStyle; }
+                                Label #rowstatus7 { Anchor: (Height: 18); Padding: (Top: 4); Text: ""; Style: @RowStatusStyle; }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview7 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+
+                        Group { Anchor: (Height: 8); }
+
+                        Group #row8 {
+                            Anchor: (Width: 500, Height: 116);
+                            LayoutMode: Left;
+                            Padding: (Left: 14, Right: 12, Top: 8, Bottom: 8);
+                            Background: @RowBackground;
+                            OutlineColor: @Outline;
+                            OutlineSize: 1;
+
+                            Group {
+                                Anchor: (Width: 370, Height: 100);
+                                LayoutMode: Top;
+
+                                Label #classname8 { Anchor: (Height: 22); Text: ""; Style: @RowNameStyle; }
+                                Label #classdescription8 { Anchor: (Height: 56); Padding: (Top: 4); Text: ""; Style: @RowDescriptionStyle; }
+                                Label #rowstatus8 { Anchor: (Height: 18); Padding: (Top: 4); Text: ""; Style: @RowStatusStyle; }
+                            }
+
+                            Group { FlexWeight: 1; }
+
+                            TextButton #preview8 {
+                                Anchor: (Top: 33, Width: 88, Height: 34);
+                                Text: "View";
+                                Style: $C.@DefaultTextButtonStyle;
+                            }
+                        }
+                    }
+                }
+
+                Group { Anchor: (Width: 10); }
+
+                Group #previewpanel {
+                    Anchor: (Width: 290);
+                    LayoutMode: Top;
+                    Padding: (Left: 14, Right: 14, Top: 12, Bottom: 12);
+                    Background: @CardBackground;
+                    OutlineColor: @Outline;
+                    OutlineSize: 1;
+
+                    Label #previewtitle {
+                        Anchor: (Height: 24);
+                        Text: "Class Preview:";
+                        Style: @TitleStyle;
+                    }
+
+                    Group { Anchor: (Height: 10); }
+
+                    Label #previewname {
+                        Anchor: (Height: 24);
+                        Text: "No classes available";
+                        Style: (FontSize: 18, RenderBold: true, TextColor: @BrightText);
+                    }
+
+                    Group { Anchor: (Height: 4); }
+
+                    Label #previewbadge {
+                        Anchor: (Height: 18);
+                        Text: "";
+                        Style: @BadgeStyle;
+                    }
+
+                    Group { Anchor: (Height: 8); }
+
+                    Label #descriptiontitle {
+                        Anchor: (Height: 18);
+                        Text: "Description";
+                        Style: @SubtitleStyle;
+                    }
+
+                    Group { Anchor: (Height: 6); }
+
+                    Label #previewdescription {
+                        Anchor: (Height: 210);
+                        Text: "";
+                        Style: @BodyStyle;
+                    }
+
+                    Group { Anchor: (Height: 12); }
+
+                    Label #statuslabel {
+                        Anchor: (Height: 60);
+                        Text: "";
+                        Style: @StatusStyle;
+                    }
+
+                    Group { FlexWeight: 1; }
+
+                    TextButton #confirmbtn {
+                        Anchor: (Width: 170, Height: 38);
+                        Text: "Confirm";
+                        Style: $C.@DefaultTextButtonStyle;
+                    }
+                }
+            }
+        }
+    }
+}

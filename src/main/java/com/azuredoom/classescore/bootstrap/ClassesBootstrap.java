@@ -48,7 +48,7 @@ public final class ClassesBootstrap {
         dataSource.setUser("");
         dataSource.setPassword("");
 
-        var repository = new JdbcClassesRepository(dataSource, "classescore_");
+        var repository = new JdbcClassesRepository(dataSource);
         repository.initializeSchema();
 
         var registry = new ClassRegistry();

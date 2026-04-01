@@ -45,10 +45,10 @@ public class HandGateTickingSystem extends EntityTickingSystem<EntityStore> {
         if (!ClassesCore.getConfig().get().isEnableClassItemRestrictions()) {
             return;
         }
-        final var holder = store.copyEntity(chunk.getReferenceTo(index));
-        var player = holder.getComponent(Player.getComponentType());
-        if (player == null)
+        var player = chunk.getComponent(index, Player.getComponentType());
+        if (player == null) {
             return;
+        }
         var playerRef = player.getReference();
         if (playerRef == null) {
             return;

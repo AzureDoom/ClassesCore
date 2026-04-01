@@ -52,10 +52,14 @@ public class ClassDamageSystem extends DamageEventSystem {
         if (isPlayer)
             return;
 
-        final var holder = store.copyEntity(archetypeChunk.getReferenceTo(index));
-        var victimNPCRef = holder.getComponent(Objects.requireNonNull(NPCEntity.getComponentType()));
-        if (victimNPCRef == null)
+        final var npcEntity = archetypeChunk.getComponent(index, Objects.requireNonNull(NPCEntity.getComponentType()));
+        if (npcEntity == null) {
             return;
+        }
+        var victimNPCRef = npcEntity.getReference();
+        if (victimNPCRef == null) {
+            return;
+        }
 
         if (!(damage.getSource() instanceof Damage.EntitySource entitySource))
             return;

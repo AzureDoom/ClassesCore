@@ -9,6 +9,10 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
+/**
+ * Utility class for managing and modifying player statistics. Provides methods to apply and remove static modifiers on
+ * player stats. This class is not meant to be instantiated.
+ */
 public class StatsUtils {
 
     private StatsUtils() {}

@@ -19,16 +19,18 @@ public class StatsTickingSystem extends EntityTickingSystem<EntityStore> {
 
     @Override
     public void tick(
-        float var1,
+        float deltaTime,
         int index,
         @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk,
         @NonNullDecl Store<EntityStore> store,
         @NonNullDecl CommandBuffer<EntityStore> commandBuffer
     ) {
-        final var holder = store.copyEntity(archetypeChunk.getReferenceTo(index));
-        final var player = holder.getComponent(Player.getComponentType());
-        final var playerRef = holder.getComponent(PlayerRef.getComponentType());
-        if (player == null || playerRef == null) {
+        final var player = archetypeChunk.getComponent(index, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+        var playerRef = player.getReference();
+        if (playerRef == null) {
             return;
         }
         StatApplier.registerStatLevelListeners();
