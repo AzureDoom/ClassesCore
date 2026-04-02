@@ -22,11 +22,21 @@ public class ClassesCoreConfig {
             (exConfig, _) -> exConfig.enableClassItemRestrictions
         )
         .add()
+        .append(
+            new KeyedCodec<>("Enable_Class_Selection_UI_On_Join", Codec.BOOLEAN),
+            (exConfig, aBoolean, _) -> exConfig.enableClassSelectionUIOnJoin = aBoolean,
+            (exConfig, _) -> exConfig.enableClassSelectionUIOnJoin
+        )
+        .add()
         .build();
 
     private String jdbcConnection = "jdbc:h2:file:./mods/com.azuredoom_classescore/data/classescore;MODE=PostgreSQL";
 
     private boolean enableClassItemRestrictions = true;
+
+    private boolean enableClassSelectionUIOnJoin = true;
+
+    private ClassesCoreConfig() {}
 
     public String getJDBCConnection() {
         return jdbcConnection;
@@ -34,5 +44,9 @@ public class ClassesCoreConfig {
 
     public boolean isEnableClassItemRestrictions() {
         return enableClassItemRestrictions;
+    }
+
+    public boolean isEnableClassSelectionUIOnJoin() {
+        return enableClassSelectionUIOnJoin;
     }
 }

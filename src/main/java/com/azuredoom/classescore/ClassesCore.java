@@ -2,6 +2,7 @@ package com.azuredoom.classescore;
 
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.server.core.command.system.CommandManager;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -90,6 +91,8 @@ public class ClassesCore extends JavaPlugin {
                                     () -> playerRestrictionCache.clear(playerId)
                                 );
                         } else {
+                            if (config.get().isEnableClassSelectionUIOnJoin())
+                                CommandManager.get().handleCommand(player, "class");
                             playerRestrictionCache.clear(playerId);
                         }
                         equipBlockManager.validateArmorOnReady(event.getPlayer());

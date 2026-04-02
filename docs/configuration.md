@@ -44,3 +44,8 @@ The `JDBC_Connection` configuration controls how ClassesCore stores player data 
 **Default:** `true`
 
 When enabled, the [Equipment Rules](https://wiki.hytalemodding.dev/mod/classescore/equipment-rules) system is used.
+
+## `Enable_Class_Selection_UI_On_Join` (Boolean)
+**Default:** `true`
+
+When enabled, a UI is shown to players upon joining the server to select their class if they have not yet selected one.
