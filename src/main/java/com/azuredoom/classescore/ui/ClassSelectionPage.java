@@ -20,7 +20,6 @@ import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.lang.BaseLangMessages;
 import com.azuredoom.classescore.util.UIUtil;
 
-// TODO: Translations for UI
 public final class ClassSelectionPage {
 
     private final PlayerRef playerRef;
@@ -562,7 +561,7 @@ public final class ClassSelectionPage {
         int index = rowIndex - 1;
 
         if (index < 0 || index >= classes.size()) {
-            statusMessage = "Invalid class selection.";
+            statusMessage = BaseLangMessages.UI_INVALID_CLASS_SELECTION.getAnsiMessage();
             applyState(ctx, getPageState());
             return;
         }
@@ -595,7 +594,7 @@ public final class ClassSelectionPage {
                 .flatMap(registry -> registry.get(classId))
                 .isEmpty()
         ) {
-            statusMessage = "That class is no longer registered.";
+            statusMessage = BaseLangMessages.UI_CLASS_NO_LONGER_REGISTERED.getAnsiMessage();
             applyState(ctx, getPageState());
             return;
         }
@@ -625,7 +624,7 @@ public final class ClassSelectionPage {
         var playerId = playerRef.getUuid();
 
         if (previewClassId == null || previewClassId.isBlank()) {
-            statusMessage = "Choose a class first.";
+            statusMessage = BaseLangMessages.UI_CHOOSE_CLASS_FIRST.getAnsiMessage();
             applyState(ctx, getPageState());
             return;
         }
@@ -637,7 +636,7 @@ public final class ClassSelectionPage {
                 .flatMap(ClassesCore.getClassRegistry()::get)
                 .isPresent()
         ) {
-            statusMessage = "You already have a class selected.";
+            statusMessage = BaseLangMessages.UI_ALREADY_HAVE_CLASS.getAnsiMessage();
             applyState(ctx, getPageState());
             return;
         }
@@ -676,10 +675,21 @@ public final class ClassSelectionPage {
      */
     private void applyState(@Nonnull UIContext ctx, @Nonnull PageState state) {
         ctx.getById("current-class", LabelBuilder.class)
-            .ifPresent(label -> label.withText("Current Class: " + state.currentClassName()));
+            .ifPresent(label -> {
+                label.withText(
+                    BaseLangMessages.UI_CURRENT_CLASS.param(
+                        "className",
+                        Optional.ofNullable(state.currentClassName()).orElse(BaseLangMessages.UI_NONE.getAnsiMessage())
+                    ).getAnsiMessage()
+                );
+            });
 
         ctx.getById("class-count", LabelBuilder.class)
-            .ifPresent(label -> label.withText("Available Classes: " + state.classes().size()));
+            .ifPresent(
+                label -> label.withText(
+                    BaseLangMessages.UI_AVAILABLE_CLASSES.param("count", state.classes().size()).getAnsiMessage()
+                )
+            );
 
         ctx.getById("preview-name", LabelBuilder.class)
             .ifPresent(label -> label.withText(state.previewName()));
@@ -695,7 +705,11 @@ public final class ClassSelectionPage {
 
         ctx.getById("confirm-btn", ButtonBuilder.class)
             .ifPresent(button -> {
-                button.withText(state.currentClassId() != null ? "Locked In" : "Confirm");
+                button.withText(
+                    state.currentClassId() != null
+                        ? BaseLangMessages.UI_LOCKED_IN.getAnsiMessage()
+                        : BaseLangMessages.UI_CONFIRM.getAnsiMessage()
+                );
                 button.withDisabled(state.confirmDisabled());
             });
 
@@ -717,7 +731,7 @@ public final class ClassSelectionPage {
                 ctx.getById(descId, LabelBuilder.class).ifPresent(label -> label.withText(""));
                 ctx.getById(statusId, LabelBuilder.class).ifPresent(label -> label.withText(""));
                 ctx.getById(buttonId, ButtonBuilder.class).ifPresent(button -> {
-                    button.withText("View");
+                    button.withText(BaseLangMessages.UI_VIEW.getAnsiMessage());
                     button.withDisabled(true);
                 });
                 continue;
@@ -736,13 +750,19 @@ public final class ClassSelectionPage {
             ctx.getById(statusId, LabelBuilder.class)
                 .ifPresent(
                     label -> label.withText(
-                        isCurrent ? "SELECTED" : (isPreview ? "PREVIEWING" : "")
+                        isCurrent
+                            ? BaseLangMessages.UI_SELECTED.getAnsiMessage()
+                            : (isPreview ? BaseLangMessages.UI_PREVIEWING.getAnsiMessage() : "")
                     )
                 );
 
             ctx.getById(buttonId, ButtonBuilder.class)
                 .ifPresent(button -> {
-                    button.withText(isPreview ? "Viewing" : "View");
+                    button.withText(
+                        isPreview
+                            ? BaseLangMessages.UI_VIEWING.getAnsiMessage()
+                            : BaseLangMessages.UI_VIEW.getAnsiMessage()
+                    );
                     button.withDisabled(isPreview);
                 });
         }
@@ -778,7 +798,7 @@ public final class ClassSelectionPage {
             : ClassesCore.getClassRegistryIfPresent().flatMap(registry -> registry.get(previewClassId));
 
         var currentClassName = currentClassId == null
-            ? "None"
+            ? BaseLangMessages.UI_NONE.getAnsiMessage()
             : ClassesCore.getClassRegistryIfPresent()
                 .flatMap(registry -> registry.get(currentClassId))
                 .map(ClassDefinition::displayName)
@@ -790,25 +810,29 @@ public final class ClassSelectionPage {
         String statusText;
 
         if (classes.isEmpty()) {
-            previewName = "No classes available";
-            previewDescription = "No classes are currently registered.";
+            previewName = BaseLangMessages.UI_NO_CLASSES_AVAILABLE.getAnsiMessage();
+            previewDescription = BaseLangMessages.UI_NO_DESCRIPTION_AVAILABLE.getAnsiMessage();
             badgeText = "";
             statusText = statusMessage != null && !statusMessage.isBlank()
                 ? statusMessage
                 : "No classes found.";
         } else {
-            previewName = previewClass.map(ClassDefinition::displayName).orElse("Unknown Class");
-            previewDescription = previewClass.map(ClassDefinition::description).orElse("No description available.");
-            badgeText = previewClassId != null && previewClassId.equals(currentClassId) ? "SELECTED" : "PREVIEW";
+            previewName = previewClass.map(ClassDefinition::displayName)
+                .orElse(BaseLangMessages.UI_UNKNOWN_CLASS.getAnsiMessage());
+            previewDescription = previewClass.map(ClassDefinition::description)
+                .orElse(BaseLangMessages.UI_NO_DESCRIPTION_AVAILABLE.getAnsiMessage());
+            badgeText = previewClassId != null && previewClassId.equals(currentClassId)
+                ? BaseLangMessages.UI_SELECTED.getAnsiMessage()
+                : BaseLangMessages.UI_PREVIEW.getAnsiMessage();
 
             if (statusMessage != null && !statusMessage.isBlank()) {
                 statusText = statusMessage;
             } else if (currentClassId != null) {
-                statusText = "You have already chosen a class.";
+                statusText = BaseLangMessages.UI_ALREADY_CHOSEN_CLASS.getAnsiMessage();
             } else if (previewClassId != null) {
-                statusText = "Press Confirm to lock in this class.";
+                statusText = BaseLangMessages.UI_PRESS_CONFIRM.getAnsiMessage();
             } else {
-                statusText = "Select a class to continue.";
+                statusText = BaseLangMessages.UI_SELECT_CLASS_TO_CONTINUE.getAnsiMessage();
             }
         }
 

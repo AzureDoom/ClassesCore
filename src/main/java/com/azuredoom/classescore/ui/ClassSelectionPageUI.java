@@ -26,7 +26,6 @@ import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.lang.BaseLangMessages;
 import com.azuredoom.classescore.util.UIUtil;
 
-// TODO: Translations for UI
 public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSelectionPageUI.Data> {
 
     private static final String UI_DOCUMENT = "Pages/ClassesCore/ClassSelectionPageUI.ui";
@@ -110,7 +109,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
                 int rowIndex = Integer.parseInt(rawIndex);
                 handlePreviewByIndex(rowIndex);
             } catch (NumberFormatException ignored) {
-                statusMessage = "Invalid class selection.";
+                statusMessage = BaseLangMessages.UI_INVALID_CLASS_SELECTION.getAnsiMessage();
                 refreshPage();
             }
             return;
@@ -189,7 +188,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
                 .flatMap(registry -> registry.get(classId))
                 .isEmpty()
         ) {
-            statusMessage = "That class is no longer registered.";
+            statusMessage = BaseLangMessages.UI_CLASS_NO_LONGER_REGISTERED.getAnsiMessage();
             refreshPage();
             return;
         }
@@ -215,7 +214,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         var playerId = playerRef.getUuid();
 
         if (previewClassId == null || previewClassId.isBlank()) {
-            statusMessage = "Choose a class first.";
+            statusMessage = BaseLangMessages.UI_CHOOSE_CLASS_FIRST.getAnsiMessage();
             refreshPage();
             return;
         }
@@ -227,7 +226,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
                 .flatMap(ClassesCore.getClassRegistry()::get)
                 .isPresent()
         ) {
-            statusMessage = "You already have a class selected.";
+            statusMessage = BaseLangMessages.UI_ALREADY_HAVE_CLASS.getAnsiMessage();
             refreshPage();
             return;
         }
@@ -275,15 +274,26 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
      *              details, selection state, preview information, and status messages.
      */
     private void writeState(@Nonnull UICommandBuilder ui, @Nonnull PageState state) {
-        setText(ui, "#currentclass", "Current Class: " + state.currentClassName());
-        setText(ui, "#classcount", "Available Classes: " + state.classes().size());
+        setText(
+            ui,
+            "#currentclass",
+            BaseLangMessages.UI_CURRENT_CLASS.param(
+                "className",
+                Optional.ofNullable(state.currentClassName()).orElse(BaseLangMessages.UI_NONE.getAnsiMessage())
+            )
+        );
+        setText(ui, "#classcount", BaseLangMessages.UI_AVAILABLE_CLASSES.param("count", state.classes().size()));
 
-        setText(ui, "#previewname", state.previewName());
-        setText(ui, "#previewbadge", state.badgeText());
-        setText(ui, "#previewdescription", state.previewDescription());
-        setText(ui, "#statuslabel", state.statusText());
+        setText(ui, "#previewname", Message.raw(state.previewName()));
+        setText(ui, "#previewbadge", Message.raw(state.badgeText()));
+        setText(ui, "#previewdescription", Message.raw(state.previewDescription()));
+        setText(ui, "#statuslabel", Message.raw(state.statusText()));
 
-        setText(ui, "#confirmbtn", state.currentClassId() != null ? "Locked In" : "Confirm");
+        setText(
+            ui,
+            "#confirmbtn",
+            state.currentClassId() != null ? BaseLangMessages.UI_LOCKED_IN : BaseLangMessages.UI_CONFIRM
+        );
         ui.set("#confirmbtn.Disabled", state.confirmDisabled());
 
         for (var i = 1; i <= UIUtil.MAX_ROWS; i++) {
@@ -299,10 +309,10 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             ui.set(rowId + ".Visible", visible);
 
             if (!visible) {
-                setText(ui, nameId, "");
-                setText(ui, descId, "");
-                setText(ui, statusId, "");
-                setText(ui, buttonId, "View");
+                setText(ui, nameId, Message.empty());
+                setText(ui, descId, Message.empty());
+                setText(ui, statusId, Message.empty());
+                setText(ui, buttonId, BaseLangMessages.UI_VIEW);
                 ui.set(buttonId + ".Disabled", true);
                 continue;
             }
@@ -311,10 +321,16 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             var isPreview = def.id().equals(state.previewClassId());
             var isCurrent = def.id().equals(state.currentClassId());
 
-            setText(ui, nameId, UIUtil.safe(def.displayName()));
-            setText(ui, descId, UIUtil.safe(def.description()));
-            setText(ui, statusId, isCurrent ? "SELECTED" : (isPreview ? "PREVIEWING" : ""));
-            setText(ui, buttonId, isPreview ? "Viewing" : "View");
+            setText(ui, nameId, Message.raw(UIUtil.safe(def.displayName())));
+            setText(ui, descId, Message.raw(UIUtil.safe(def.description())));
+            setText(
+                ui,
+                statusId,
+                isCurrent
+                    ? BaseLangMessages.UI_SELECTED
+                    : (isPreview ? BaseLangMessages.UI_PREVIEWING : Message.empty())
+            );
+            setText(ui, buttonId, isPreview ? BaseLangMessages.UI_VIEWING : BaseLangMessages.UI_VIEW);
             ui.set(buttonId + ".Disabled", isPreview);
         }
     }
@@ -325,10 +341,10 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
      *
      * @param ui       The {@link UICommandBuilder} instance used to construct and apply UI updates.
      * @param selector The selector string used to identify the target UI element.
-     * @param text     The text content to be set for the target UI element.
+     * @param message  The text content to be set for the target UI element.
      */
-    private static void setText(@Nonnull UICommandBuilder ui, @Nonnull String selector, @Nonnull String text) {
-        ui.set(selector + ".TextSpans", Message.raw(text));
+    private static void setText(@Nonnull UICommandBuilder ui, @Nonnull String selector, @Nonnull Message message) {
+        ui.set(selector + ".TextSpans", message);
     }
 
     /**
@@ -359,7 +375,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             : ClassesCore.getClassRegistryIfPresent().flatMap(registry -> registry.get(previewClassId));
 
         var currentClassName = currentClassId == null
-            ? "None"
+            ? BaseLangMessages.UI_NONE.getAnsiMessage()
             : ClassesCore.getClassRegistryIfPresent()
                 .flatMap(registry -> registry.get(currentClassId))
                 .map(ClassDefinition::displayName)
@@ -371,25 +387,29 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         String statusText;
 
         if (classes.isEmpty()) {
-            previewName = "No classes available";
-            previewDescription = "No classes are currently registered.";
+            previewName = BaseLangMessages.UI_NO_CLASSES_AVAILABLE.getAnsiMessage();
+            previewDescription = BaseLangMessages.UI_NO_DESCRIPTION_AVAILABLE.getAnsiMessage();
             badgeText = "";
             statusText = statusMessage != null && !statusMessage.isBlank()
                 ? statusMessage
                 : "No classes found.";
         } else {
-            previewName = previewClass.map(ClassDefinition::displayName).orElse("Unknown Class");
-            previewDescription = previewClass.map(ClassDefinition::description).orElse("No description available.");
-            badgeText = previewClassId != null && previewClassId.equals(currentClassId) ? "SELECTED" : "PREVIEW";
+            previewName = previewClass.map(ClassDefinition::displayName)
+                .orElse(BaseLangMessages.UI_UNKNOWN_CLASS.getAnsiMessage());
+            previewDescription = previewClass.map(ClassDefinition::description)
+                .orElse(BaseLangMessages.UI_NO_DESCRIPTION_AVAILABLE.getAnsiMessage());
+            badgeText = previewClassId != null && previewClassId.equals(currentClassId)
+                ? BaseLangMessages.UI_SELECTED.getAnsiMessage()
+                : BaseLangMessages.UI_PREVIEW.getAnsiMessage();
 
             if (statusMessage != null && !statusMessage.isBlank()) {
                 statusText = statusMessage;
             } else if (currentClassId != null) {
-                statusText = "You have already chosen a class.";
+                statusText = BaseLangMessages.UI_ALREADY_CHOSEN_CLASS.getAnsiMessage();
             } else if (previewClassId != null) {
-                statusText = "Press Confirm to lock in this class.";
+                statusText = BaseLangMessages.UI_PRESS_CONFIRM.getAnsiMessage();
             } else {
-                statusText = "Select a class to continue.";
+                statusText = BaseLangMessages.UI_SELECT_CLASS_TO_CONTINUE.getAnsiMessage();
             }
         }
 

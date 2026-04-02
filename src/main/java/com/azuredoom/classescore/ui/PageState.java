@@ -19,7 +19,7 @@ import com.azuredoom.classescore.data.ClassDefinition;
  * @param badgeText          A text displayed as a badge, typically used to provide additional metadata for the
  *                           previewed class.
  * @param statusText         A text displayed to indicate the current status of the page or provide user feedback.
- * @param confirmDisabled    A flag indicating whether the confirm button is disabled.
+ * @param confirmDisabled    A flag indicating whether the confirmation button is disabled.
  */
 public record PageState(
     List<ClassDefinition> classes,
