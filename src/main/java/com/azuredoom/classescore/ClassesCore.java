@@ -11,13 +11,11 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.util.Config;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
 import java.util.logging.Level;
 
-import com.azuredoom.classescore.api.ClassesCoreAPI;
 import com.azuredoom.classescore.bootstrap.ClassesBootstrap;
 import com.azuredoom.classescore.command.ClassSelectionCommand;
-import com.azuredoom.classescore.command.JoinClassCommand;
-import com.azuredoom.classescore.command.LeaveClassCommand;
 import com.azuredoom.classescore.compat.DynamicTooltipsLibCompat;
 import com.azuredoom.classescore.compat.placeholderapi.PlaceholderAPICompat;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
@@ -36,8 +34,6 @@ public class ClassesCore extends JavaPlugin {
 
     public static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    private static ClassesCore INSTANCE;
-
     private static Config<ClassesCoreConfig> config = null;
 
     private static ClassServiceImpl classService;
@@ -54,13 +50,11 @@ public class ClassesCore extends JavaPlugin {
 
     public ClassesCore(@NotNull JavaPluginInit init) {
         super(init);
-        INSTANCE = this;
         config = this.withConfig("classescore", ClassesCoreConfig.CODEC);
     }
 
     @Override
     protected void setup() {
-        INSTANCE = this;
         config.save();
 
         var bootstrap = new ClassesBootstrap(this, config.get()).bootstrap();
@@ -68,8 +62,6 @@ public class ClassesCore extends JavaPlugin {
         classService = bootstrap.service();
         classRegistry = bootstrap.registry();
 
-        this.getCommandRegistry().registerCommand(new JoinClassCommand());
-        this.getCommandRegistry().registerCommand(new LeaveClassCommand());
         this.getCommandRegistry().registerCommand(new ClassSelectionCommand());
 
         if (config.get().isEnableClassItemRestrictions()) {
@@ -78,7 +70,7 @@ public class ClassesCore extends JavaPlugin {
             this.getEventRegistry()
                 .registerGlobal(PlayerReadyEvent.class, (event) -> {
                     var player = event.getPlayer();
-                    ClassesCoreAPI.getClassServiceIfPresent().ifPresent(service -> {
+                    ClassesCore.getClassServiceIfPresent().ifPresent(service -> {
                         var playerRef = player.getReference();
                         if (playerRef == null) {
                             LOGGER.at(Level.WARNING).log("Player reference is null");
@@ -110,7 +102,8 @@ public class ClassesCore extends JavaPlugin {
                     itemBlockPacketManager.getHandCheckState().remove(playerId);
                     itemBlockPacketManager.clearPlayer(playerId);
                     playerRestrictionCache.clear(playerId);
-                    ClassesCoreAPI.getClassServiceIfPresent().ifPresent(service -> service.evictPlayer(playerId));
+                    ClassesCore.getClassServiceIfPresent()
+                        .ifPresent(service -> service.evictPlayer(playerId));
                 });
         }
         if (PluginManager.get().getPlugin(new PluginIdentifier("org.herolias", "DynamicTooltipsLib")) != null) {
@@ -164,15 +157,19 @@ public class ClassesCore extends JavaPlugin {
         return classService;
     }
 
+    public static Optional<ClassServiceImpl> getClassServiceIfPresent() {
+        return Optional.ofNullable(classService);
+    }
+
     public static ClassRegistry getClassRegistry() {
         return classRegistry;
     }
 
-    public static PlayerRestrictionCache getPlayerRestrictionCache() {
-        return playerRestrictionCache;
+    public static Optional<ClassRegistry> getClassRegistryIfPresent() {
+        return Optional.ofNullable(classRegistry);
     }
 
-    public static ClassesCore getInstance() {
-        return INSTANCE;
+    public static PlayerRestrictionCache getPlayerRestrictionCache() {
+        return playerRestrictionCache;
     }
 }

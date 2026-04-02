@@ -47,6 +47,12 @@ public class PlayerRestrictionCache {
      * @return {@code true} if the player is allowed to use the specified weapon; {@code false} otherwise
      */
     public boolean canUseWeapon(UUID playerId, String itemId) {
+        Objects.requireNonNull(playerId, "playerId");
+
+        if (itemId == null || itemId.isBlank()) {
+            return false;
+        }
+
         var state = states.get(playerId);
         if (state == null) {
             return true;
@@ -65,6 +71,12 @@ public class PlayerRestrictionCache {
      * @return {@code true} if the player is allowed to use the specified armor; {@code false} otherwise
      */
     public boolean canUseArmor(UUID playerId, String itemId) {
+        Objects.requireNonNull(playerId, "playerId");
+
+        if (itemId == null || itemId.isBlank()) {
+            return false;
+        }
+
         var state = states.get(playerId);
         if (state == null) {
             return true;

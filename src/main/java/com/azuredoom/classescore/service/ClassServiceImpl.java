@@ -1,9 +1,7 @@
 package com.azuredoom.classescore.service;
 
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.modules.entitystats.modifier.StaticModifier;
-import com.hypixel.hytale.server.core.universe.Universe;
 
 import java.util.Map;
 import java.util.Objects;
@@ -11,12 +9,16 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
+import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.model.PlayerClassState;
 import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.data.ClassRegistry;
+import com.azuredoom.classescore.data.PassiveDefinition;
 import com.azuredoom.classescore.db.JdbcClassesRepository;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
+import com.azuredoom.classescore.util.PlayerUtils;
 import com.azuredoom.classescore.util.StatApplier;
 import com.azuredoom.classescore.util.StatsUtils;
 
@@ -106,58 +108,36 @@ public final class ClassServiceImpl {
             .orElseThrow(() -> new IllegalArgumentException("Unknown class id: " + classId));
 
         var now = System.currentTimeMillis();
-
-        var playerRef = Universe.get().getPlayer(playerId);
-        if (playerRef == null) {
-            return;
-        }
-        var store = Objects.requireNonNull(playerRef.getReference()).getStore();
-        var playerComponent = store.ensureAndGetComponent(playerRef.getReference(), Player.getComponentType());
-        StatApplier.applyInitialClassStats(playerId, definition);
-        for (var passive : definition.passives()) {
-            StaticModifier.CalculationType type;
-            var id = passive.id().toLowerCase();
-            var index = STAT_INDEX_MAP.entrySet()
-                .stream()
-                .filter(e -> id.contains(e.getKey()))
-                .findFirst()
-                .map(e -> e.getValue().get())
-                .orElse(null);
-            if (index == null) {
-                continue;
-            }
-            switch (passive.type()) {
-                case ATTRIBUTE_MULTIPLIER -> type = StaticModifier.CalculationType.MULTIPLICATIVE;
-                case ATTRIBUTE_ADDITIVE -> type = StaticModifier.CalculationType.ADDITIVE;
-                default -> type = null;
-            }
-            if (type == null) {
-                continue;
-            }
-            StatsUtils.doStatChange(store, playerComponent, index, type, passive.value(), passive.id());
-        }
-
-        var state = getPlayerState(playerId)
-            .map(
-                existing -> new PlayerClassState(
-                    existing.playerId(),
-                    definition.id(),
-                    existing.createdAt(),
-                    now
-                )
-            )
-            .orElseGet(
-                () -> new PlayerClassState(
-                    playerId,
-                    definition.id(),
-                    now,
-                    now
-                )
-            );
+        var state = new PlayerClassState(playerId, definition.id(), now, now);
 
         repository.savePlayerState(state);
-        playerStateCache.put(playerId, Optional.of(state));
-        restrictionCache.setClass(playerId, definition);
+
+        try {
+            applyClassEffects(playerId, definition);
+
+            playerStateCache.put(playerId, Optional.of(state));
+            restrictionCache.setClass(playerId, definition);
+        } catch (RuntimeException ex) {
+            try {
+                repository.deletePlayerState(playerId);
+            } catch (RuntimeException suppressed) {
+                ex.addSuppressed(suppressed);
+            }
+
+            playerStateCache.put(playerId, Optional.empty());
+            restrictionCache.clear(playerId);
+
+            try {
+                removeClassEffects(playerId, definition);
+            } catch (RuntimeException suppressed) {
+                ClassesCore.LOGGER.at(Level.WARNING)
+                    .withCause(suppressed)
+                    .log("Failed to remove class effects after selecting class");
+                ex.addSuppressed(suppressed);
+            }
+
+            throw ex;
+        }
     }
 
     /**
@@ -172,30 +152,29 @@ public final class ClassServiceImpl {
     public void clearClass(UUID playerId, String classId) {
         Objects.requireNonNull(playerId, "playerId");
 
-        repository.deletePlayerState(playerId);
-        playerStateCache.put(playerId, Optional.empty());
-        restrictionCache.clear(playerId);
+        if (classId == null || classId.isBlank()) {
+            throw new IllegalArgumentException("classId cannot be null or blank");
+        }
 
         var definition = classRegistry.get(classId)
             .orElseThrow(() -> new IllegalArgumentException("Unknown class id: " + classId));
-        var playerRef = Universe.get().getPlayer(playerId);
-        if (playerRef == null) {
-            return;
-        }
-        var store = Objects.requireNonNull(playerRef.getReference()).getStore();
-        var playerComponent = store.ensureAndGetComponent(playerRef.getReference(), Player.getComponentType());
-        for (var passive : definition.passives()) {
-            var id = passive.id().toLowerCase();
-            var index = STAT_INDEX_MAP.entrySet()
-                .stream()
-                .filter(e -> id.contains(e.getKey()))
-                .findFirst()
-                .map(e -> e.getValue().get())
-                .orElse(null);
-            if (index == null) {
-                continue;
+
+        removeClassEffects(playerId, definition);
+
+        try {
+            repository.deletePlayerState(playerId);
+            playerStateCache.put(playerId, Optional.empty());
+            restrictionCache.clear(playerId);
+        } catch (RuntimeException ex) {
+            try {
+                applyClassEffects(playerId, definition);
+            } catch (RuntimeException suppressed) {
+                ClassesCore.LOGGER.at(Level.WARNING)
+                    .withCause(suppressed)
+                    .log("Failed to apply class effects after clearing class");
+                ex.addSuppressed(suppressed);
             }
-            StatsUtils.removeStatModifier(store, playerComponent, index, passive.id());
+            throw ex;
         }
     }
 
@@ -222,15 +201,7 @@ public final class ClassServiceImpl {
      * @throws NullPointerException if {@code playerId} is {@code null}
      */
     public boolean isWeaponAllowed(UUID playerId, String weaponId) {
-        Objects.requireNonNull(playerId, "playerId");
-
-        if (weaponId == null || weaponId.isBlank()) {
-            return false;
-        }
-
-        return getSelectedClassDefinition(playerId)
-            .map(definition -> definition.equipmentRules().isWeaponAllowed(weaponId))
-            .orElse(true);
+        return restrictionCache.canUseWeapon(playerId, weaponId);
     }
 
     /**
@@ -244,35 +215,36 @@ public final class ClassServiceImpl {
      * @throws NullPointerException if {@code playerId} is {@code null}
      */
     public boolean isArmorAllowed(UUID playerId, String armorId) {
-        Objects.requireNonNull(playerId, "playerId");
-
-        if (armorId == null || armorId.isBlank()) {
-            return false;
-        }
-
-        return getSelectedClassDefinition(playerId)
-            .map(definition -> definition.equipmentRules().isArmorAllowed(armorId))
-            .orElse(true);
+        return restrictionCache.canUseArmor(playerId, armorId);
     }
 
     /**
-     * Loads the state of a player's selected class identified by their unique identifier. The method retrieves the
-     * player's class state from the repository and, if a valid state is found, fetches the corresponding class
-     * definition from the class registry. If the class definition exists, it updates the restriction cache with the
-     * class-specific equipment restrictions for the player.
+     * Loads the player state for the given player ID. This method retrieves the player's state from the repository,
+     * validates the associated class definition, and updates the restriction cache accordingly. If the player's state
+     * or class definition is not found, it returns an empty {@code Optional}.
      *
-     * @param playerId the unique identifier of the player whose class state is to be loaded
-     * @return an {@code Optional} containing the {@code PlayerClassState} if the player's class state exists, or an
-     *         empty {@code Optional} if no class state is found
-     * @throws NullPointerException if {@code playerId} is {@code null}
+     * @param playerId the unique identifier of the player whose state is being loaded
+     * @return an {@code Optional} containing the player's state if found and valid, or an empty {@code Optional} if no
+     *         valid state exists
      */
     private Optional<PlayerClassState> loadPlayerState(UUID playerId) {
+        restrictionCache.clear(playerId);
+
         var state = repository.findPlayerState(playerId);
+        if (state.isEmpty()) {
+            return Optional.empty();
+        }
 
-        state.flatMap(playerState -> classRegistry.get(playerState.classId()))
-            .ifPresent(classDefinition -> restrictionCache.setClass(playerId, classDefinition));
+        var playerState = state.get();
+        var classDefinition = classRegistry.get(playerState.classId());
 
-        return state;
+        if (classDefinition.isEmpty()) {
+            repository.deletePlayerState(playerId);
+            return Optional.empty();
+        }
+
+        restrictionCache.setClass(playerId, classDefinition.get());
+        return Optional.of(playerState);
     }
 
     /**
@@ -284,5 +256,97 @@ public final class ClassServiceImpl {
     public void evictPlayer(UUID playerId) {
         playerStateCache.remove(playerId);
         restrictionCache.clear(playerId);
+    }
+
+    /**
+     * Applies the effects of a given class to a specific player, including initial class stats and passive effects.
+     *
+     * @param playerId   The unique identifier of the player to whom the class effects will be applied.
+     * @param definition The class definition containing the stats and passives to apply to the player.
+     */
+    private void applyClassEffects(UUID playerId, ClassDefinition definition) {
+        var playerContext = PlayerUtils.getPlayerContext(playerId).orElseThrow();
+
+        StatApplier.applyInitialClassStats(playerId, definition);
+
+        for (var passive : definition.passives()) {
+            var index = resolveStatIndex(passive.id());
+            if (index == null) {
+                continue;
+            }
+
+            var type = resolveCalculationType(passive);
+            if (type == null) {
+                continue;
+            }
+
+            StatsUtils.doStatChange(
+                playerContext.store(),
+                playerContext.playerComponent(),
+                index,
+                type,
+                passive.value(),
+                passive.id()
+            );
+        }
+    }
+
+    /**
+     * Removes the effects of a specific class from a player's stats.
+     *
+     * @param playerId   The unique identifier of the player from whom the class effects will be removed.
+     * @param definition The class definition containing the passive effects to be removed.
+     */
+    private void removeClassEffects(UUID playerId, ClassDefinition definition) {
+        var playerContext = PlayerUtils.getPlayerContext(playerId).orElseThrow();
+
+        for (var passive : definition.passives()) {
+            var index = resolveStatIndex(passive.id());
+            if (index == null) {
+                continue;
+            }
+
+            StatsUtils.removeStatModifier(
+                playerContext.store(),
+                playerContext.playerComponent(),
+                index,
+                passive.id()
+            );
+        }
+    }
+
+    /**
+     * Resolves the stat index associated with a given passive identifier. The method processes the identifier to check
+     * its match within the pre-defined {@code STAT_INDEX_MAP}, using a case-insensitive comparison.
+     *
+     * @param passiveId the passive identifier as a {@code String} used to find the corresponding stat index
+     * @return an {@code Integer} representing the resolved stat index if a match is found, or {@code null} if no match
+     *         exists
+     */
+    private Integer resolveStatIndex(String passiveId) {
+        var id = passiveId.toLowerCase();
+        return STAT_INDEX_MAP.entrySet()
+            .stream()
+            .filter(e -> id.contains(e.getKey()))
+            .findFirst()
+            .map(e -> e.getValue().get())
+            .orElse(null);
+    }
+
+    /**
+     * Resolves the calculation type for the given passive definition. The method determines how the passive effect
+     * modifies attributes based on its type, mapping the passive's type to a specific calculation type.
+     *
+     * @param passive the {@code PassiveDefinition} object containing the details of the passive effect, including its
+     *                type and associated attributes or effects.
+     * @return the {@code StaticModifier.CalculationType} representing the calculation method to be used for the passive
+     *         effect. Returns {@code null} if the passive's type does not match any known types.
+     */
+    private StaticModifier.CalculationType resolveCalculationType(PassiveDefinition passive) {
+        return switch (passive.type()) {
+            case ATTRIBUTE_MULTIPLIER -> StaticModifier.CalculationType.MULTIPLICATIVE;
+            case ATTRIBUTE_ADDITIVE -> StaticModifier.CalculationType.ADDITIVE;
+            default -> null;
+        };
     }
 }

@@ -42,6 +42,13 @@ public final class ClassesBootstrap {
         this.config = Objects.requireNonNull(config, "config");
     }
 
+    /**
+     * Initializes and bootstraps the system by setting up the required data sources, repositories, registries, and
+     * services. It also prepares the schema for use and loads all available class definitions into the registry.
+     *
+     * @return A {@link BootstrapResult} object containing the initialized repository, registry, service, and a cleanup
+     *         operation to release resources.
+     */
     public BootstrapResult bootstrap() {
         var dataSource = new JdbcDataSource();
         dataSource.setURL(config.getJDBCConnection());
@@ -58,6 +65,15 @@ public final class ClassesBootstrap {
         return new BootstrapResult(repository, registry, service, repository::close);
     }
 
+    /**
+     * Loads all class definitions from available sources and registers them into the provided {@link ClassRegistry}.
+     * This method aggregates class definitions from the classpath and external ZIP asset packs, merges them, and
+     * registers each unique definition in the registry.
+     *
+     * @param registry The {@link ClassRegistry} instance where the loaded class definitions will be registered. Must
+     *                 not be null.
+     * @throws RuntimeException If any error occurs during the loading or registration of class definitions.
+     */
     private void loadAllClasses(ClassRegistry registry) {
         try {
             var mergedDefinitions = new LinkedHashMap<String, ClassDefinition>();
@@ -71,6 +87,16 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Loads all class definitions available in the classpath and populates the provided sink map. This method
+     * identifies resources named "classes" in the classpath, determines their protocol (e.g., file, jar), and delegates
+     * the processing of the resources to appropriate loading methods based on their protocol. Unsupported protocols are
+     * skipped with a warning.
+     *
+     * @param sink A map to be populated with the loaded class definitions, keyed by their unique identifiers. The map
+     *             must be non-null.
+     * @throws Exception If an error occurs during the resource scanning, processing, or class definition loading.
+     */
     private void loadAllClasspathClasses(Map<String, ClassDefinition> sink) throws Exception {
         var classLoader = plugin.getClass().getClassLoader();
         Enumeration<URL> resources = classLoader.getResources("classes");
@@ -95,6 +121,17 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Loads class definitions from a specified directory and populates the provided sink map. This method scans the
+     * directory for files with a ".json" extension, processes them, and extracts {@link ClassDefinition} objects, which
+     * are then added to the sink map.
+     *
+     * @param sink        A map to be populated with the loaded class definitions, keyed by their unique identifiers.
+     *                    The map must be non-null.
+     * @param resourceUrl The URL pointing to the directory from which class definitions will be loaded. Must not be
+     *                    null and must point to a valid directory.
+     * @throws Exception If an error occurs during directory traversal, file processing, or class definition loading.
+     */
     private void loadClassesFromDirectory(Map<String, ClassDefinition> sink, URL resourceUrl) throws Exception {
         var classesPath = Paths.get(resourceUrl.toURI());
 
@@ -115,6 +152,17 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Loads class definitions from a specified JAR file and populates the provided sink map. This method scans the JAR
+     * file for entries located in the "classes/" directory that have a ".json" extension. Each matching entry is
+     * processed to extract its {@link ClassDefinition} and add it to the sink map.
+     *
+     * @param sink        A map to be populated with the loaded class definitions, keyed by their unique identifiers.
+     *                    The map must be non-null.
+     * @param resourceUrl The URL pointing to the JAR file from which class definitions will be loaded. Must not be null
+     *                    and must point to a valid JAR file.
+     * @throws Exception If an error occurs during JAR file access, entry processing, or class definition loading.
+     */
     private void loadClassesFromJar(Map<String, ClassDefinition> sink, URL resourceUrl) throws Exception {
         var connection = (JarURLConnection) resourceUrl.openConnection();
 
@@ -135,6 +183,14 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Loads external ZIP or JAR asset packs into the provided sink map. This method scans a specific directory for ZIP
+     * and JAR files, then extracts class definitions contained within these archives and populates the sink map.
+     *
+     * @param sink The map to store the loaded class definitions, keyed by their unique identifiers. The map must be
+     *             non-null.
+     * @throws Exception If an error occurs during file processing or while loading class definitions.
+     */
     private void loadExternalZipAssetPacks(Map<String, ClassDefinition> sink) throws Exception {
         var assetPackDir = resolveAssetPackDirectory();
 
@@ -159,6 +215,17 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Loads class definitions from a specified ZIP file and adds them to the provided sink map. This method processes
+     * files within the ZIP that are located in the "classes/" directory and have a ".json" extension. Each JSON file is
+     * parsed to create a {@link ClassDefinition}, which is then added to the sink map.
+     *
+     * @param sink    A map to store the loaded class definitions, keyed by their unique identifiers. The map must be
+     *                non-null.
+     * @param zipPath The path to the ZIP file containing the class definition files. Must not be null and must point to
+     *                a valid ZIP file.
+     * @throws Exception If an error occurs during the processing of the ZIP file or the loading of class definitions.
+     */
     private void loadClassesFromZip(Map<String, ClassDefinition> sink, Path zipPath) throws Exception {
         try (var zipFile = new ZipFile(zipPath.toFile())) {
             var entries = zipFile.entries();
@@ -177,6 +244,20 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Adds a class definition to the provided sink map. If a definition with the same ID already exists in the sink,
+     * its behavior depends on the `overrideExisting` flag: - If `overrideExisting` is true, the existing definition
+     * will be replaced. - If `overrideExisting` is false, the existing definition will be retained, and a warning will
+     * be logged.
+     *
+     * @param sink             The map that stores class definitions, keyed by their unique identifiers.
+     * @param definition       The {@link ClassDefinition} to be added to the sink. Must not be null.
+     * @param overrideExisting A boolean flag indicating whether to override an existing definition with the same ID.
+     * @param sourceName       The name of the source from which the class definition originates, used for logging and
+     *                         error reporting.
+     * @throws NullPointerException  If the `definition` parameter is null.
+     * @throws IllegalStateException If the `definition` has a null or blank ID.
+     */
     private void putDefinition(
         Map<String, ClassDefinition> sink,
         ClassDefinition definition,
@@ -210,6 +291,17 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Loads a class definition from a given JSON input stream and source identifier. This method parses the provided
+     * input stream to extract class attributes, including its unique identifier, display name, description, statistics,
+     * passive abilities, and equipment rules.
+     *
+     * @param stream     The {@link InputStream} containing the JSON representation of the class definition.
+     * @param sourceName The string identifier of the source, used for error reporting purposes.
+     * @return A {@link ClassDefinition} object containing the parsed class data.
+     * @throws RuntimeException If an error occurs while reading or parsing the input, or if the JSON structure is
+     *                          invalid.
+     */
     private ClassDefinition loadClass(InputStream stream, String sourceName) {
         try (var reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
             var root = GSON.fromJson(reader, JsonObject.class);
@@ -291,6 +383,12 @@ public final class ClassesBootstrap {
         }
     }
 
+    /**
+     * Resolves the directory path where asset packs (such as .zip or .jar files) are stored. This method ensures that
+     * the path is absolute and normalized for consistent usage.
+     *
+     * @return the {@link Path} object representing the absolute and normalized "mods" directory.
+     */
     private Path resolveAssetPackDirectory() {
         return Paths.get("mods").toAbsolutePath().normalize();
     }

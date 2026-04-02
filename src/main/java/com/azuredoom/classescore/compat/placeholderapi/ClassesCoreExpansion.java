@@ -5,7 +5,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.azuredoom.classescore.api.ClassesCoreAPI;
+import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.model.PlayerClassState;
 
 public class ClassesCoreExpansion extends PlaceholderExpansion {
@@ -32,8 +32,8 @@ public class ClassesCoreExpansion extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(PlayerRef playerRef, @NotNull String params) {
-        var classesService = ClassesCoreAPI.getClassServiceIfPresent().orElse(null);
-        var classRegistry = ClassesCoreAPI.getClassRegistryIfPresent().orElse(null);
+        var classesService = ClassesCore.getClassService();
+        var classRegistry = ClassesCore.getClassRegistry();
         if (classesService == null || classRegistry == null) {
             return null;
         }

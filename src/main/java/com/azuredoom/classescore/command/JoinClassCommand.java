@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 
 import com.azuredoom.classescore.ClassesCore;
-import com.azuredoom.classescore.api.ClassesCoreAPI;
 import com.azuredoom.classescore.lang.BaseLangMessages;
 
 public final class JoinClassCommand extends AbstractPlayerCommand {
@@ -26,7 +25,7 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
     private final RequiredArg<String> classIdArg;
 
     public JoinClassCommand() {
-        super("joinclass", "Join a class");
+        super("join", "Join a class");
         this.requirePermission("classescore.joinclass");
         this.playerArg = this.withRequiredArg(
             "player",
@@ -34,7 +33,7 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
             ArgTypes.PLAYER_REF
         );
         this.classIdArg = this.withRequiredArg("classId", "Class id to select", ArgTypes.STRING);
-        this.setPermissionGroup(GameMode.Adventure);
+        this.setPermissionGroup(GameMode.Creative);
     }
 
     @Override
@@ -45,7 +44,12 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
         @NotNull PlayerRef playerRef,
         @NotNull World world
     ) {
-        if (ClassesCoreAPI.playerHasClass(playerRef.getUuid())) {
+        var service = ClassesCore.getClassService();
+
+        if (
+            service == null ||
+                service.getSelectedClassDefinition(playerRef.getUuid()).isPresent()
+        ) {
             playerRef.sendMessage(BaseLangMessages.ALREADY_HAS_CLASS);
             return;
         }

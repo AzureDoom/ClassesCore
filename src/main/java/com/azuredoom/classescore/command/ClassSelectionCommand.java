@@ -13,7 +13,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jetbrains.annotations.NotNull;
 
-import com.azuredoom.classescore.api.ClassesCoreAPI;
+import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.lang.BaseLangMessages;
 import com.azuredoom.classescore.ui.ClassSelectionPage;
 import com.azuredoom.classescore.ui.ClassSelectionPageUI;
@@ -21,9 +21,12 @@ import com.azuredoom.classescore.ui.ClassSelectionPageUI;
 public final class ClassSelectionCommand extends AbstractPlayerCommand {
 
     public ClassSelectionCommand() {
-        super("classselection", "Join a class via UI");
-        this.requirePermission("classescore.classselection");
+        super("class", "opens UI to select class");
+        this.requirePermission("classescore.class");
         this.setPermissionGroup(GameMode.Adventure);
+        this.addSubCommand(new JoinClassCommand());
+        this.addSubCommand(new LeaveClassCommand());
+        this.addSubCommand(new ListClassesCommand());
     }
 
     @Override
@@ -34,7 +37,12 @@ public final class ClassSelectionCommand extends AbstractPlayerCommand {
         @NotNull PlayerRef playerRef,
         @NotNull World world
     ) {
-        if (ClassesCoreAPI.playerHasClass(playerRef.getUuid())) {
+        var service = ClassesCore.getClassService();
+
+        if (
+            service == null ||
+                service.getSelectedClassDefinition(playerRef.getUuid()).isPresent()
+        ) {
             playerRef.sendMessage(BaseLangMessages.ALREADY_HAS_CLASS);
             return;
         }

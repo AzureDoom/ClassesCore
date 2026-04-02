@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 import com.azuredoom.classescore.ClassesCore;
-import com.azuredoom.classescore.api.ClassesCoreAPI;
+import com.azuredoom.classescore.data.ClassRegistry;
 
 public class DynamicTooltipsLibCompat {
 
@@ -119,7 +119,9 @@ public class DynamicTooltipsLibCompat {
     private List<String> findAllowedClassesForItem(String itemId) {
         var result = new ArrayList<String>();
 
-        for (var classDef : ClassesCoreAPI.getClasses()) {
+        for (
+            var classDef : ClassesCore.getClassRegistryIfPresent().map(ClassRegistry::all).orElse(List.of())
+        ) {
             if (classDef == null || classDef.equipmentRules() == null) {
                 continue;
             }

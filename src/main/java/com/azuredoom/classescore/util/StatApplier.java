@@ -5,7 +5,7 @@ import com.azuredoom.levelingcore.level.LevelServiceImpl;
 
 import java.util.UUID;
 
-import com.azuredoom.classescore.api.ClassesCoreAPI;
+import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.data.ClassDefinition;
 
 /**
@@ -115,7 +115,9 @@ public final class StatApplier {
     public static void registerStatLevelListeners() {
         LevelingCoreApi.getLevelServiceIfPresent().ifPresent(levelService -> {
             levelService.registerLevelUpListener((playerUUID, newLevel, oldLevel) -> {
-                var classDefinition = ClassesCoreAPI.getSelectedClass(playerUUID).orElse(null);
+                var classDefinition = ClassesCore.getClassServiceIfPresent()
+                    .flatMap(service -> service.getSelectedClassDefinition(playerUUID))
+                    .orElse(null);
                 if (classDefinition == null) {
                     return;
                 }
@@ -136,7 +138,9 @@ public final class StatApplier {
             });
 
             levelService.registerLevelDownListener((playerUUID, newLevel, oldLevel) -> {
-                var classDefinition = ClassesCoreAPI.getSelectedClass(playerUUID).orElse(null);
+                var classDefinition = ClassesCore.getClassServiceIfPresent()
+                    .flatMap(service -> service.getSelectedClassDefinition(playerUUID))
+                    .orElse(null);
                 if (classDefinition == null) {
                     return;
                 }

@@ -1,6 +1,6 @@
 ---
 title: "Class Configuration"
-order: 4
+order: 5
 published: true
 draft: false
 ---

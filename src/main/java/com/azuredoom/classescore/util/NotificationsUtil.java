@@ -9,7 +9,7 @@ import com.hypixel.hytale.server.core.util.NotificationUtil;
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.lang.BaseLangMessages;
 
-public class NotificationsUtil {
+public final class NotificationsUtil {
 
     private NotificationsUtil() {}
 

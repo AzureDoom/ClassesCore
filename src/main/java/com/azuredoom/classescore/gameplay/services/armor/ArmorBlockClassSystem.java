@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
+import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
 import com.azuredoom.classescore.util.NotificationsUtil;
 
@@ -89,7 +90,7 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                     return;
                 }
                 var playerUuid = playerRefComponent.getUuid();
-                if (restrictionCache.canUseArmor(playerUuid, itemId)) {
+                if (ClassesCore.getClassService().isArmorAllowed(playerUuid, itemId)) {
                     return;
                 }
 
@@ -166,7 +167,7 @@ public class ArmorBlockClassSystem extends ArmorBlockLevelSystem {
                     continue;
                 }
 
-                if (restrictionCache.canUseArmor(playerUuid, itemId)) {
+                if (ClassesCore.getClassService().isArmorAllowed(playerUuid, itemId)) {
                     continue;
                 }
 

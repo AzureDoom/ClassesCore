@@ -27,7 +27,7 @@ public final class ClassesCoreAPI {
      *         {@code Optional} if the service is not present.
      */
     public static Optional<ClassServiceImpl> getClassServiceIfPresent() {
-        return Optional.ofNullable(ClassesCore.getClassService());
+        return ClassesCore.getClassServiceIfPresent();
     }
 
     /**
@@ -37,7 +37,7 @@ public final class ClassesCoreAPI {
      *         {@code Optional} if the registry is not available.
      */
     public static Optional<ClassRegistry> getClassRegistryIfPresent() {
-        return Optional.ofNullable(ClassesCore.getClassRegistry());
+        return ClassesCore.getClassRegistryIfPresent();
     }
 
     /**
@@ -132,32 +132,19 @@ public final class ClassesCoreAPI {
             .flatMap(ClassesCoreAPI::getClassDefinition);
     }
 
-    /**
-     * Selects a class for the given player based on the specified class identifier.
-     * <p>
-     * This method verifies the validity of the class identifier and checks if the class exists in the system. It also
-     * ensures that the {@code ClassServiceImpl} is available before proceeding with the selection. If all conditions
-     * are satisfied, the method delegates the class selection to the service.
-     *
-     * @param playerId the unique identifier of the player for whom the class is to be selected
-     * @param classId  the unique identifier of the class to be selected
-     * @return {@code true} if the class was successfully selected, {@code false} otherwise
-     */
-    public static boolean selectClass(UUID playerId, String classId) {
+    public static void selectClass(UUID playerId, String classId) {
         if (classId == null || classId.isBlank()) {
-            return false;
-        }
-        if (!hasClass(classId)) {
-            return false;
+            throw new IllegalArgumentException("classId cannot be null or blank");
         }
 
-        var service = getClassServiceIfPresent().orElse(null);
-        if (service == null) {
-            return false;
+        if (!hasClass(classId)) {
+            throw new IllegalArgumentException("Unknown class id: " + classId);
         }
+
+        var service = getClassServiceIfPresent()
+            .orElseThrow(() -> new IllegalStateException("Class service unavailable"));
 
         service.selectClass(playerId, classId);
-        return true;
     }
 
     /**
@@ -168,16 +155,14 @@ public final class ClassesCoreAPI {
      *
      * @param playerId the unique identifier of the player whose class is to be cleared
      * @param classId  the unique identifier of the class to be cleared
-     * @return {@code true} if the class was successfully cleared, {@code false} if the service is unavailable
      */
-    public static boolean clearClass(UUID playerId, String classId) {
+    public static void clearClass(UUID playerId, String classId) {
         var service = getClassServiceIfPresent().orElse(null);
         if (service == null) {
-            return false;
+            return;
         }
 
         service.clearClass(playerId, classId);
-        return true;
     }
 
     /**

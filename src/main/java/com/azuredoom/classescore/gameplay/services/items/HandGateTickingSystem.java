@@ -73,7 +73,7 @@ public class HandGateTickingSystem extends EntityTickingSystem<EntityStore> {
         }
 
         var startsWithPrefix = itemId.startsWith(WEAPON_PREFIX);
-        var canUse = restrictionCache.canUseWeapon(playerId, itemId);
+        var canUse = ClassesCore.getClassService().isWeaponAllowed(playerId, itemId);
         var blocked = startsWithPrefix && !canUse;
 
         lastChecks.put(playerId, new HandCheckState(hand, itemId, blocked));

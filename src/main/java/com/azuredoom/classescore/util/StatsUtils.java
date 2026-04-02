@@ -13,10 +13,20 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * Utility class for managing and modifying player statistics. Provides methods to apply and remove static modifiers on
  * player stats. This class is not meant to be instantiated.
  */
-public class StatsUtils {
+public final class StatsUtils {
 
     private StatsUtils() {}
 
+    /**
+     * Retrieves the {@link EntityStatMap} associated with the given player. This method fetches the stat component of
+     * the player's reference from the provided store. If the player is null or their reference is null, the method
+     * returns null.
+     *
+     * @param store  The store providing access to entity components, expected to include the player's stat map.
+     * @param player The player whose {@link EntityStatMap} is to be retrieved. Must not be null.
+     * @return The {@link EntityStatMap} of the player's reference if available, or null if the player or their
+     *         reference is null.
+     */
     private static @NullableDecl EntityStatMap getStatMap(@NonNullDecl Store<EntityStore> store, Player player) {
         if (player == null || player.getReference() == null) {
             return null;
