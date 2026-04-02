@@ -1,7 +1,7 @@
 {
     "Group": "com.azuredoom",
     "Name": "classescore",
-    "Version": "0.0.1-alpha.2",
+    "Version": "0.0.1-beta.1",
     "Description": "Classes Module for the LevelingCore mod",
     "Authors": [
         {

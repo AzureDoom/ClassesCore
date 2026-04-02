@@ -16,6 +16,7 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,6 +38,8 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
 
     @Nullable
     private String statusMessage;
+
+    private int currentPage = 0;
 
     public ClassSelectionPageUI(@Nonnull PlayerRef playerRef) {
         super(playerRef, CustomPageLifetime.CanDismiss, Data.CODEC);
@@ -93,14 +96,26 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             return;
         }
 
-        if ("close".equals(data.action)) {
-            close();
-            return;
-        }
-
-        if ("confirm".equals(data.action)) {
-            handleConfirm(ref, store);
-            return;
+        switch (data.action) {
+            case "close" -> {
+                close();
+                return;
+            }
+            case "confirm" -> {
+                handleConfirm(ref, store);
+                return;
+            }
+            case "page:prev" -> {
+                currentPage = Math.max(0, currentPage - 1);
+                refreshPage();
+                return;
+            }
+            case "page:next" -> {
+                int totalPages = getTotalPages(UIUtil.getSortedClasses().size());
+                currentPage = Math.min(totalPages - 1, currentPage + 1);
+                refreshPage();
+                return;
+            }
         }
 
         if (data.action.startsWith("preview:")) {
@@ -138,7 +153,19 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             new EventData().append("Action", "confirm")
         );
 
-        for (var i = 1; i <= UIUtil.MAX_ROWS; i++) {
+        uiEventBuilder.addEventBinding(
+            CustomUIEventBindingType.Activating,
+            "#prevbtn",
+            new EventData().append("Action", "page:prev")
+        );
+
+        uiEventBuilder.addEventBinding(
+            CustomUIEventBindingType.Activating,
+            "#nextbtn",
+            new EventData().append("Action", "page:next")
+        );
+
+        for (var i = 1; i <= UIUtil.ROWS_PER_PAGE; i++) {
             uiEventBuilder.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#preview" + i,
@@ -148,24 +175,24 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
     }
 
     /**
-     * Handles the preview action for a class selected by its index in the Class Selection UI. Validates the given row
-     * index, checks its bounds, and updates the preview state if valid. If the index is invalid, a status message is
-     * set and the page is refreshed.
+     * Handles the preview action for the class specified by the index in the Class Selection UI. This method calculates
+     * the absolute index, validates its range, retrieves the corresponding class, and initiates the preview action. In
+     * case of an invalid index, it updates the status message and refreshes the page.
      *
-     * @param rowIndex The index of the class row to preview. The index is expected to be a zero-based integer relative
-     *                 to the displayed class list.
+     * @param rowIndex The 1-based index of the class in the current UI page to be previewed. This value is converted to
+     *                 an absolute index for validation and processing.
      */
     private void handlePreviewByIndex(int rowIndex) {
         var classes = UIUtil.getSortedClasses();
-        var index = rowIndex - 1;
+        int absoluteIndex = (currentPage * UIUtil.ROWS_PER_PAGE) + (rowIndex - 1);
 
-        if (index < 0 || index >= classes.size()) {
-            statusMessage = "Invalid class selection.";
+        if (absoluteIndex < 0 || absoluteIndex >= classes.size()) {
+            statusMessage = BaseLangMessages.UI_INVALID_CLASS_SELECTION.getAnsiMessage();
             refreshPage();
             return;
         }
 
-        handlePreview(classes.get(index).id());
+        handlePreview(classes.get(absoluteIndex).id());
     }
 
     /**
@@ -282,10 +309,9 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
                 Optional.ofNullable(state.currentClassName()).orElse(BaseLangMessages.UI_NONE.getAnsiMessage())
             )
         );
-        setText(ui, "#classcount", BaseLangMessages.UI_AVAILABLE_CLASSES.param("count", state.classes().size()));
+        setText(ui, "#classcount", BaseLangMessages.UI_AVAILABLE_CLASSES.param("count", state.totalClassCount()));
 
         setText(ui, "#previewname", Message.raw(state.previewName()));
-        setText(ui, "#previewbadge", Message.raw(state.badgeText()));
         setText(ui, "#previewdescription", Message.raw(state.previewDescription()));
         setText(ui, "#statuslabel", Message.raw(state.statusText()));
 
@@ -296,7 +322,16 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         );
         ui.set("#confirmbtn.Disabled", state.confirmDisabled());
 
-        for (var i = 1; i <= UIUtil.MAX_ROWS; i++) {
+        setText(
+            ui,
+            "#pagelabel",
+            Message.raw("Page " + (state.currentPage() + 1) + " / " + state.totalPages())
+        );
+
+        ui.set("#prevbtn.Disabled", !state.hasPreviousPage());
+        ui.set("#nextbtn.Disabled", !state.hasNextPage());
+
+        for (var i = 1; i <= UIUtil.ROWS_PER_PAGE; i++) {
             var classIndex = i - 1;
             var visible = classIndex < state.classes().size();
 
@@ -348,17 +383,57 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
     }
 
     /**
-     * Extracts and constructs the current state of the Class Selection UI page. The method evaluates the available
-     * classes, the currently selected class, and the previewed class, and it determines the appropriate status and
-     * metadata to be displayed to the user.
+     * Retrieves a subset of class definitions corresponding to the specified page.
+     * The classes are paginated based on a fixed number of rows per page.
      *
-     * @return a {@link PageState} instance representing the current state of the Class Selection UI page, including
-     *         available classes, selected class information, preview details, status messages, and the state of the
-     *         confirm button.
+     * @param allClasses The list of all available class definitions. Must not be null.
+     * @param page The page index (0-based) for which class definitions are to be retrieved.
+     *             If the value is less than zero or beyond the total number of pages, an empty list is returned.
+     * @return A list of class definitions for the given page. The list may be empty if the page index is invalid or out of range.
+     */
+    private static List<ClassDefinition> getPageClasses(List<ClassDefinition> allClasses, int page) {
+        var start = page * UIUtil.ROWS_PER_PAGE;
+        var end = Math.min(start + UIUtil.ROWS_PER_PAGE, allClasses.size());
+
+        if (start >= allClasses.size() || start < 0) {
+            return List.of();
+        }
+
+        return allClasses.subList(start, end);
+    }
+
+    /**
+     * Calculates the total number of pages required to display a specified number of classes.
+     * The calculation is based on a fixed number of rows per page.
+     *
+     * @param totalClasses The total number of classes to be displayed. Must be a non-negative integer.
+     * @return The total number of pages required, with a minimum value of 1.
+     */
+    private static int getTotalPages(int totalClasses) {
+        return Math.max(1, (int) Math.ceil((double) totalClasses / UIUtil.ROWS_PER_PAGE));
+    }
+
+    /**
+     * Retrieves the current state of the page, including information about available classes,
+     * pagination, and the preview of the selected or highlighted class.
+     *
+     * @return an instance of {@code PageState} containing the current page details, class information,
+     *         and other necessary data for displaying the UI state.
      */
     private PageState getPageState() {
         var playerId = playerRef.getUuid();
-        var classes = UIUtil.getSortedClasses();
+        var allClasses = UIUtil.getSortedClasses();
+        var totalPages = getTotalPages(allClasses.size());
+
+        if (currentPage >= totalPages) {
+            currentPage = totalPages - 1;
+        }
+        if (currentPage < 0) {
+            currentPage = 0;
+        }
+
+        var classes = getPageClasses(allClasses, currentPage);
+
         var currentClassId = ClassesCore.getClassServiceIfPresent()
             .flatMap(s -> s.getPlayerState(playerId))
             .map(PlayerClassState::classId)
@@ -367,7 +442,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         if (previewClassId == null) {
             previewClassId = currentClassId != null
                 ? currentClassId
-                : (classes.isEmpty() ? null : classes.getFirst().id());
+                : (allClasses.isEmpty() ? null : allClasses.getFirst().id());
         }
 
         Optional<ClassDefinition> previewClass = previewClassId == null
@@ -386,7 +461,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         String badgeText;
         String statusText;
 
-        if (classes.isEmpty()) {
+        if (allClasses.isEmpty()) {
             previewName = BaseLangMessages.UI_NO_CLASSES_AVAILABLE.getAnsiMessage();
             previewDescription = BaseLangMessages.UI_NO_DESCRIPTION_AVAILABLE.getAnsiMessage();
             badgeText = "";
@@ -413,10 +488,15 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             }
         }
 
-        var confirmDisabled = classes.isEmpty() || currentClassId != null || previewClassId == null;
+        var confirmDisabled = allClasses.isEmpty() || currentClassId != null || previewClassId == null;
 
         return new PageState(
             classes,
+            currentPage,
+            totalPages,
+            allClasses.size(),
+            currentPage > 0,
+            currentPage < totalPages - 1,
             currentClassId,
             currentClassName,
             previewClassId,

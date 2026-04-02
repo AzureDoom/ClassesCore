@@ -17,7 +17,7 @@ public final class UIUtil {
 
     private UIUtil() {}
 
-    public static final int MAX_ROWS = 8;
+    public static final int ROWS_PER_PAGE = 8;
 
     /**
      * Retrieves a sorted list of {@link ClassDefinition} objects. The sorting is performed based on the display name of

@@ -2,6 +2,7 @@ package com.azuredoom.classescore.ui;
 
 import au.ellie.hyui.builders.*;
 import au.ellie.hyui.events.UIContext;
+import au.ellie.hyui.types.ScrollbarStyle;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
@@ -10,6 +11,7 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,6 +31,8 @@ public final class ClassSelectionPage {
 
     @Nullable
     private String statusMessage;
+
+    private int currentPage = 0;
 
     public ClassSelectionPage(@Nonnull PlayerRef playerRef) {
         this.playerRef = playerRef;
@@ -70,12 +74,22 @@ public final class ClassSelectionPage {
                 (ignored, ctx) -> ctx.getPage().ifPresent(HyUIPage::close)
             )
             .addEventListener(
+                "prev-btn",
+                CustomUIEventBindingType.Activating,
+                (ignored, ctx) -> handlePreviousPage(ctx)
+            )
+            .addEventListener(
+                "next-btn",
+                CustomUIEventBindingType.Activating,
+                (ignored, ctx) -> handleNextPage(ctx)
+            )
+            .addEventListener(
                 "confirm-btn",
                 CustomUIEventBindingType.Activating,
                 (ignored, ctx) -> handleConfirm(ref, store, ctx)
             );
 
-        for (var i = 1; i <= UIUtil.MAX_ROWS; i++) {
+        for (var i = 1; i <= UIUtil.ROWS_PER_PAGE; i++) {
             final var rowIndex = i;
             page.addEventListener(
                 "preview-" + rowIndex,
@@ -194,23 +208,26 @@ public final class ClassSelectionPage {
             .withOutlineSize(1.0f)
             .withPadding(new HyUIPadding().setLeft(0).setRight(0).setTop(12).setBottom(0));
 
-        panel.addChild(spacerH(8));
+        panel.addChild(spacerH(4));
 
         var list = GroupBuilder.group()
             .withId("class-list")
             .withLayoutMode("TopScrolling")
             .withAnchor(size(510, 480))
             .withKeepScrollPosition(true)
-            .withPadding(new HyUIPadding().setRight(0).setBottom(10));
+            .withPadding(new HyUIPadding().setRight(0))
+            .withScrollbarStyle(ScrollbarStyle.defaultStyle());
 
-        for (var i = 1; i <= UIUtil.MAX_ROWS; i++) {
+        for (var i = 1; i <= UIUtil.ROWS_PER_PAGE; i++) {
             list.addChild(buildRow(i, state));
-            if (i < UIUtil.MAX_ROWS) {
+            if (i < UIUtil.ROWS_PER_PAGE) {
                 list.addChild(spacerH(8));
             }
         }
 
         panel.addChild(list);
+        panel.addChild(spacerH(-4));
+        panel.addChild(buildPaginationBar(state));
         return panel;
     }
 
@@ -254,9 +271,13 @@ public final class ClassSelectionPage {
 
             name = UIUtil.safe(def.displayName());
             description = UIUtil.safe(def.description());
-            status = isCurrent ? "SELECTED" : (isPreview ? "PREVIEWING" : "");
+            status = isCurrent
+                ? BaseLangMessages.UI_SELECTED.getAnsiMessage()
+                : (isPreview ? BaseLangMessages.UI_PREVIEWING.getAnsiMessage() : "");
             disableButton = isPreview;
-            buttonText = isPreview ? "Viewing" : "View";
+            buttonText = isPreview
+                ? BaseLangMessages.UI_VIEWING.getAnsiMessage()
+                : BaseLangMessages.UI_VIEW.getAnsiMessage();
         }
 
         row.withVisible(visible);
@@ -544,29 +565,27 @@ public final class ClassSelectionPage {
     }
 
     /**
-     * Handles the previewing of a class based on the specified row index. This method validates the provided row index,
-     * determines if it corresponds to a valid class in the sorted list of available classes, and updates the user
-     * interface to reflect the previewed class. If the index is invalid, an appropriate status message is displayed.
+     * Handles the preview of a specific item based on its index within a paginated list. Determines the absolute index
+     * of the item to preview, validates the index, and invokes the preview action if valid. If the index is invalid, an
+     * error message is displayed, and the system state is updated accordingly.
      *
-     * @param rowIndex The zero-based index of the class in the list to be previewed. Must be within the bounds of the
-     *                 sorted list of available classes.
-     * @param ctx      The {@link UIContext} used to update the user interface. It provides mechanisms to apply changes
-     *                 and update the visual state of the page.
+     * @param rowIndex the 1-based index of the row on the current page that is being selected for preview
+     * @param ctx      the UI context used to manage and apply state or actions on the user interface
      */
     private void handlePreviewByIndex(
         int rowIndex,
         @Nonnull UIContext ctx
     ) {
         var classes = UIUtil.getSortedClasses();
-        int index = rowIndex - 1;
+        int absoluteIndex = (currentPage * UIUtil.ROWS_PER_PAGE) + (rowIndex - 1);
 
-        if (index < 0 || index >= classes.size()) {
+        if (absoluteIndex < 0 || absoluteIndex >= classes.size()) {
             statusMessage = BaseLangMessages.UI_INVALID_CLASS_SELECTION.getAnsiMessage();
             applyState(ctx, getPageState());
             return;
         }
 
-        handlePreview(classes.get(index).id(), ctx);
+        handlePreview(classes.get(absoluteIndex).id(), ctx);
     }
 
     /**
@@ -675,27 +694,24 @@ public final class ClassSelectionPage {
      */
     private void applyState(@Nonnull UIContext ctx, @Nonnull PageState state) {
         ctx.getById("current-class", LabelBuilder.class)
-            .ifPresent(label -> {
-                label.withText(
+            .ifPresent(
+                label -> label.withText(
                     BaseLangMessages.UI_CURRENT_CLASS.param(
                         "className",
                         Optional.ofNullable(state.currentClassName()).orElse(BaseLangMessages.UI_NONE.getAnsiMessage())
                     ).getAnsiMessage()
-                );
-            });
+                )
+            );
 
         ctx.getById("class-count", LabelBuilder.class)
             .ifPresent(
                 label -> label.withText(
-                    BaseLangMessages.UI_AVAILABLE_CLASSES.param("count", state.classes().size()).getAnsiMessage()
+                    BaseLangMessages.UI_AVAILABLE_CLASSES.param("count", state.totalClassCount()).getAnsiMessage()
                 )
             );
 
         ctx.getById("preview-name", LabelBuilder.class)
             .ifPresent(label -> label.withText(state.previewName()));
-
-        ctx.getById("preview-badge", LabelBuilder.class)
-            .ifPresent(label -> label.withText(state.badgeText()));
 
         ctx.getById("preview-description", LabelBuilder.class)
             .ifPresent(label -> label.withText(state.previewDescription()));
@@ -713,7 +729,16 @@ public final class ClassSelectionPage {
                 button.withDisabled(state.confirmDisabled());
             });
 
-        for (var i = 1; i <= UIUtil.MAX_ROWS; i++) {
+        ctx.getById("page-label", LabelBuilder.class)
+            .ifPresent(label -> label.withText("Page " + (state.currentPage() + 1) + " / " + state.totalPages()));
+
+        ctx.getById("prev-btn", ButtonBuilder.class)
+            .ifPresent(button -> button.withDisabled(!state.hasPreviousPage()));
+
+        ctx.getById("next-btn", ButtonBuilder.class)
+            .ifPresent(button -> button.withDisabled(!state.hasNextPage()));
+
+        for (var i = 1; i <= UIUtil.ROWS_PER_PAGE; i++) {
             var classIndex = i - 1;
             var visible = classIndex < state.classes().size();
 
@@ -771,17 +796,120 @@ public final class ClassSelectionPage {
     }
 
     /**
-     * Computes and returns the current state of the class selection page, encapsulating the available classes, the
-     * currently selected class, the class being previewed, and the corresponding status and user feedback information.
+     * Handles the action of navigating to the previous page in the UI context.
+     * Decrements the current page index by 1, ensuring it does not go below 0,
+     * resets the status message, and applies the updated state to the UI context.
      *
-     * @return a {@link PageState} object containing the following: - The list of available {@link ClassDefinition}
-     *         objects. - The ID and display name of the currently selected class. - The ID, display name, description,
-     *         and badge text of the previewed class. - A status message for the user interface. - A flag indicating
-     *         whether the confirm button is disabled.
+     * @param ctx the UI context in which the page navigation is performed; must not be null
+     */
+    private void handlePreviousPage(@Nonnull UIContext ctx) {
+        currentPage = Math.max(0, currentPage - 1);
+        statusMessage = null;
+        applyState(ctx, getPageState());
+    }
+
+    /**
+     * Handles navigation to the next page in a paginated context. Updates the current page index
+     * to the next page, ensuring it does not exceed the total number of available pages. Resets
+     * the status message and applies the updated state to the given UI context.
+     *
+     * @param ctx the UI context to which the updated state will be applied; cannot be null
+     */
+    private void handleNextPage(@Nonnull UIContext ctx) {
+        var totalPages = getTotalPages(UIUtil.getSortedClasses().size());
+        currentPage = Math.min(totalPages - 1, currentPage + 1);
+        statusMessage = null;
+        applyState(ctx, getPageState());
+    }
+
+    /**
+     * Retrieves a subset of class definitions corresponding to the specified page.
+     * The classes are paginated based on a fixed number of rows per page.
+     *
+     * @param allClasses The list of all available class definitions. Must not be null.
+     * @param page The page index (0-based) for which class definitions are to be retrieved.
+     *             If the value is less than zero or beyond the total number of pages, an empty list is returned.
+     * @return A list of class definitions for the given page. The list may be empty if the page index is invalid or out of range.
+     */
+    private static List<ClassDefinition> getPageClasses(List<ClassDefinition> allClasses, int page) {
+        var start = page * UIUtil.ROWS_PER_PAGE;
+        var end = Math.min(start + UIUtil.ROWS_PER_PAGE, allClasses.size());
+
+        if (start >= allClasses.size() || start < 0) {
+            return List.of();
+        }
+
+        return allClasses.subList(start, end);
+    }
+
+    /**
+     * Calculates the total number of pages required to display a specified number of classes.
+     * The calculation is based on a fixed number of rows per page.
+     *
+     * @param totalClasses The total number of classes to be displayed. Must be a non-negative integer.
+     * @return The total number of pages required, with a minimum value of 1.
+     */
+    private static int getTotalPages(int totalClasses) {
+        return Math.max(1, (int) Math.ceil((double) totalClasses / UIUtil.ROWS_PER_PAGE));
+    }
+
+    private GroupBuilder buildPaginationBar(PageState state) {
+        var bar = GroupBuilder.group()
+            .withId("pagination-bar")
+            .withLayoutMode("Left")
+            .withAnchor(size(510, 34));
+
+        bar.addChild(
+            ButtonBuilder.secondaryTextButton()
+                .withId("prev-btn")
+                .withText("Previous")
+                .withDisabled(!state.hasPreviousPage())
+                .withAnchor(size(110, 34))
+        );
+
+        bar.addChild(spacerW(12));
+
+        bar.addChild(
+            LabelBuilder.label()
+                .withId("page-label")
+                .withText("Page " + (state.currentPage() + 1) + " / " + state.totalPages())
+                .withStyle(new HyUIStyle().setFontSize(13).setRenderBold(true).setTextColor("#dbe7f5"))
+                .withAnchor(size(140, 34))
+        );
+
+        bar.addChild(spacerW(12));
+
+        bar.addChild(
+            ButtonBuilder.secondaryTextButton()
+                .withId("next-btn")
+                .withText("Next")
+                .withDisabled(!state.hasNextPage())
+                .withAnchor(size(110, 34))
+        );
+
+        return bar;
+    }
+
+    /**
+     * Retrieves the current state of the page, including information about available classes,
+     * pagination, and the preview of the selected or highlighted class.
+     *
+     * @return an instance of {@code PageState} containing the current page details, class information,
+     *         and other necessary data for displaying the UI state.
      */
     private PageState getPageState() {
         var playerId = playerRef.getUuid();
-        var classes = UIUtil.getSortedClasses();
+        var allClasses = UIUtil.getSortedClasses();
+        var totalPages = getTotalPages(allClasses.size());
+
+        if (currentPage >= totalPages) {
+            currentPage = totalPages - 1;
+        }
+        if (currentPage < 0) {
+            currentPage = 0;
+        }
+
+        var classes = getPageClasses(allClasses, currentPage);
         var currentClassId = ClassesCore.getClassServiceIfPresent()
             .flatMap(s -> s.getPlayerState(playerId))
             .map(PlayerClassState::classId)
@@ -840,6 +968,11 @@ public final class ClassSelectionPage {
 
         return new PageState(
             classes,
+            currentPage,
+            totalPages,
+            allClasses.size(),
+            currentPage > 0,
+            currentPage < totalPages - 1,
             currentClassId,
             currentClassName,
             previewClassId,

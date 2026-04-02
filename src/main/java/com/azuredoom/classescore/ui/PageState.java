@@ -11,6 +11,11 @@ import com.azuredoom.classescore.data.ClassDefinition;
  * to the user.
  *
  * @param classes            A list of {@link ClassDefinition} objects defining the available classes for selection.
+ * @param currentPage        The index of the current page being displayed.
+ * @param totalPages         The total number of pages available based on the number of classes.
+ * @param totalClassCount    The total number of classes available for selection.
+ * @param hasPreviousPage    Indicates if there is a previous page available.
+ * @param hasNextPage        Indicates if there is a next page available.
  * @param currentClassId     The unique identifier of the currently selected class, or null if no class is selected.
  * @param currentClassName   The display name of the currently selected class, or null if no class is selected.
  * @param previewClassId     The unique identifier of the class being previewed, or null if no preview is active.
@@ -23,6 +28,11 @@ import com.azuredoom.classescore.data.ClassDefinition;
  */
 public record PageState(
     List<ClassDefinition> classes,
+    int currentPage,
+    int totalPages,
+    int totalClassCount,
+    boolean hasPreviousPage,
+    boolean hasNextPage,
     @Nullable String currentClassId,
     @Nullable String currentClassName,
     @Nullable String previewClassId,

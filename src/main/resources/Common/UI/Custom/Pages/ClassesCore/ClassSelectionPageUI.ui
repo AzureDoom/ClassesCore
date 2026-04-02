@@ -383,6 +383,36 @@ $C.@PageOverlay {
                             }
                         }
                     }
+                    Group { Anchor: (Height: 8); }
+
+                    Group #paginationbar {
+                        Anchor: (Height: 34);
+                        LayoutMode: Left;
+                    
+                        TextButton #prevbtn {
+                            Anchor: (Width: 110, Height: 34);
+                            Text: "Previous";
+                            Style: $C.@DefaultTextButtonStyle;
+                            Disabled: true;
+                        }
+
+                        Group { Anchor: (Width: 12); }
+
+                        Label #pagelabel {
+                            Anchor: (Width: 140, Height: 24);
+                            Style: (FontSize: 13, RenderBold: true, TextColor: @BrightText, VerticalAlignment: Center);
+                            Text: "Page 1 / 1";
+                        }
+
+                        Group { Anchor: (Width: 12); }
+
+                        TextButton #nextbtn {
+                            Anchor: (Width: 110, Height: 34);
+                            Text: "Next";
+                            Style: $C.@DefaultTextButtonStyle;
+                            Disabled: true;
+                        }
+                    }
                 }
 
                 Group { Anchor: (Width: 10); }
@@ -410,14 +440,6 @@ $C.@PageOverlay {
                     }
 
                     Group { Anchor: (Height: 4); }
-
-                    Label #previewbadge {
-                        Anchor: (Height: 18);
-                        Text: "";
-                        Style: @BadgeStyle;
-                    }
-
-                    Group { Anchor: (Height: 8); }
 
                     Label #descriptiontitle {
                         Anchor: (Height: 18);
