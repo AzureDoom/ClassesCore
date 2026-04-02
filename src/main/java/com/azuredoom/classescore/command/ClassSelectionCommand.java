@@ -37,11 +37,8 @@ public final class ClassSelectionCommand extends AbstractPlayerCommand {
         @NotNull PlayerRef playerRef,
         @NotNull World world
     ) {
-        var service = ClassesCore.getClassService();
-
         if (
-            service == null ||
-                service.getSelectedClassDefinition(playerRef.getUuid()).isPresent()
+            ClassesCore.getClassService().getSelectedClassDefinition(playerRef.getUuid()).isPresent()
         ) {
             playerRef.sendMessage(BaseLangMessages.ALREADY_HAS_CLASS);
             return;
@@ -52,7 +49,7 @@ public final class ClassSelectionCommand extends AbstractPlayerCommand {
 
         if (player.getPageManager().getCustomPage() == null) {
             if (PluginManager.get().getPlugin(new PluginIdentifier("Ellie", "HyUI")) != null) {
-                var page = new ClassSelectionPage(playerRef);
+                var page = new ClassSelectionPage();
                 page.open(ref, store);
             } else {
                 var page = new ClassSelectionPageUI(playerRef);

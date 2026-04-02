@@ -40,9 +40,9 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.2'
-    implementation 'com.buuz135:MultipleHUD:1.0.7'
-    vineImplementation 'curse.maven:dynamictooltipslib-1459711:7817318'
+    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.3'
+    compileOnly 'com.buuz135:MultipleHUD:1.0.7'
+    vineCompileOnly 'curse.maven:dynamictooltipslib-1459711:7817318'
     compileOnly 'at.helpch:placeholderapi-hytale:1.0.8'
     vineCompileOnly 'curse.maven:hyui-1431415:7820303'
     //vineImplementation 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'

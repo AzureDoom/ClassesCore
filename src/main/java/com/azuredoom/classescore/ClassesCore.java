@@ -92,7 +92,7 @@ public class ClassesCore extends JavaPlugin {
                                 );
                         } else {
                             if (config.get().isEnableClassSelectionUIOnJoin())
-                                CommandManager.get().handleCommand(player, "class");
+                                CommandManager.get().handleCommand(playerRefComponent, "class");
                             playerRestrictionCache.clear(playerId);
                         }
                         equipBlockManager.validateArmorOnReady(event.getPlayer());

@@ -8,7 +8,6 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
@@ -17,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,8 +31,6 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
 
     private static final String UI_DOCUMENT = "Pages/ClassesCore/ClassSelectionPageUI.ui";
 
-    private final PlayerRef playerRef;
-
     @Nullable
     private String previewClassId;
 
@@ -43,7 +41,6 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
 
     public ClassSelectionPageUI(@Nonnull PlayerRef playerRef) {
         super(playerRef, CustomPageLifetime.CanDismiss, Data.CODEC);
-        this.playerRef = playerRef;
     }
 
     /**
@@ -69,7 +66,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         uiCommandBuilder.append(UI_DOCUMENT);
 
         bindEvents(uiEventBuilder);
-        writeState(uiCommandBuilder, getPageState());
+        writeState(uiCommandBuilder, Objects.requireNonNull(getPageState(ref, store)));
     }
 
     /**
@@ -92,7 +89,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         super.handleDataEvent(ref, store, data);
 
         if (data.action == null || data.action.isBlank()) {
-            refreshPage();
+            refreshPage(ref, store);
             return;
         }
 
@@ -107,13 +104,13 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             }
             case "page:prev" -> {
                 currentPage = Math.max(0, currentPage - 1);
-                refreshPage();
+                refreshPage(ref, store);
                 return;
             }
             case "page:next" -> {
                 int totalPages = getTotalPages(UIUtil.getSortedClasses().size());
                 currentPage = Math.min(totalPages - 1, currentPage + 1);
-                refreshPage();
+                refreshPage(ref, store);
                 return;
             }
         }
@@ -121,16 +118,16 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         if (data.action.startsWith("preview:")) {
             var rawIndex = data.action.substring("preview:".length());
             try {
-                int rowIndex = Integer.parseInt(rawIndex);
-                handlePreviewByIndex(rowIndex);
+                var rowIndex = Integer.parseInt(rawIndex);
+                handlePreviewByIndex(rowIndex, ref, store);
             } catch (NumberFormatException ignored) {
                 statusMessage = BaseLangMessages.UI_INVALID_CLASS_SELECTION.getAnsiMessage();
-                refreshPage();
+                refreshPage(ref, store);
             }
             return;
         }
 
-        refreshPage();
+        refreshPage(ref, store);
     }
 
     /**
@@ -181,18 +178,20 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
      *
      * @param rowIndex The 1-based index of the class in the current UI page to be previewed. This value is converted to
      *                 an absolute index for validation and processing.
+     * @param ref      A reference to the {@link EntityStore}, representing the player's specific data.
+     * @param store    A reference to the {@link Store<EntityStore>}, used for accessing player data.
      */
-    private void handlePreviewByIndex(int rowIndex) {
+    private void handlePreviewByIndex(int rowIndex, @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
         var classes = UIUtil.getSortedClasses();
-        int absoluteIndex = (currentPage * UIUtil.ROWS_PER_PAGE) + (rowIndex - 1);
+        var absoluteIndex = (currentPage * UIUtil.ROWS_PER_PAGE) + (rowIndex - 1);
 
         if (absoluteIndex < 0 || absoluteIndex >= classes.size()) {
             statusMessage = BaseLangMessages.UI_INVALID_CLASS_SELECTION.getAnsiMessage();
-            refreshPage();
+            refreshPage(ref, store);
             return;
         }
 
-        handlePreview(classes.get(absoluteIndex).id());
+        handlePreview(classes.get(absoluteIndex).id(), ref, store);
     }
 
     /**
@@ -202,11 +201,17 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
      *
      * @param classId The identifier of the class to be previewed. Must be a non-null, non-blank string representing a
      *                valid class identifier.
+     * @param ref     A reference to the {@link EntityStore}, representing the player's specific data.
+     * @param store   A reference to the {@link Store<EntityStore>}, used for accessing player data.
      */
-    private void handlePreview(@Nonnull String classId) {
+    private void handlePreview(
+        @Nonnull String classId,
+        @Nonnull Ref<EntityStore> ref,
+        @Nonnull Store<EntityStore> store
+    ) {
         if (classId.isBlank()) {
             statusMessage = "Invalid class selection.";
-            refreshPage();
+            refreshPage(ref, store);
             return;
         }
 
@@ -216,13 +221,13 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
                 .isEmpty()
         ) {
             statusMessage = BaseLangMessages.UI_CLASS_NO_LONGER_REGISTERED.getAnsiMessage();
-            refreshPage();
+            refreshPage(ref, store);
             return;
         }
 
         previewClassId = classId;
         statusMessage = null;
-        refreshPage();
+        refreshPage(ref, store);
     }
 
     /**
@@ -238,11 +243,15 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
         @Nonnull Ref<EntityStore> ref,
         @Nonnull Store<EntityStore> store
     ) {
+        var playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        if (playerRef == null) {
+            return;
+        }
         var playerId = playerRef.getUuid();
 
         if (previewClassId == null || previewClassId.isBlank()) {
             statusMessage = BaseLangMessages.UI_CHOOSE_CLASS_FIRST.getAnsiMessage();
-            refreshPage();
+            refreshPage(ref, store);
             return;
         }
 
@@ -254,7 +263,7 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
                 .isPresent()
         ) {
             statusMessage = BaseLangMessages.UI_ALREADY_HAVE_CLASS.getAnsiMessage();
-            refreshPage();
+            refreshPage(ref, store);
             return;
         }
 
@@ -262,19 +271,16 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
             ClassesCore.getClassService().selectClass(playerId, previewClassId);
         } catch (IllegalStateException | IllegalArgumentException ex) {
             statusMessage = ex.getMessage();
-            refreshPage();
+            refreshPage(ref, store);
             return;
         }
 
-        var player = store.getComponent(ref, Player.getComponentType());
-        if (player != null) {
-            var chosenName = ClassesCore.getClassServiceIfPresent()
-                .flatMap(s -> s.getSelectedClassDefinition(playerId))
-                .map(ClassDefinition::displayName)
-                .orElse(previewClassId);
+        var chosenName = ClassesCore.getClassServiceIfPresent()
+            .flatMap(s -> s.getSelectedClassDefinition(playerId))
+            .map(ClassDefinition::displayName)
+            .orElse(previewClassId);
 
-            player.sendMessage(BaseLangMessages.SELECTED_CLASS.param("className", chosenName));
-        }
+        playerRef.sendMessage(BaseLangMessages.SELECTED_CLASS.param("className", chosenName));
 
         close();
     }
@@ -285,10 +291,13 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
      * {@link UICommandBuilder}. The updated UI may include the currently selected class information, previewed class
      * details, status messages, and available class rows. The method ensures that the UI state is consistent with the
      * underlying page state.
+     *
+     * @param ref   A reference to the {@link EntityStore}, representing the player's specific data.
+     * @param store the entity store used to access and modify components and data.
      */
-    private void refreshPage() {
+    private void refreshPage(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
         var builder = new UICommandBuilder();
-        writeState(builder, getPageState());
+        writeState(builder, Objects.requireNonNull(getPageState(ref, store)));
         this.sendUpdate(builder);
     }
 
@@ -383,13 +392,14 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
     }
 
     /**
-     * Retrieves a subset of class definitions corresponding to the specified page.
-     * The classes are paginated based on a fixed number of rows per page.
+     * Retrieves a subset of class definitions corresponding to the specified page. The classes are paginated based on a
+     * fixed number of rows per page.
      *
      * @param allClasses The list of all available class definitions. Must not be null.
-     * @param page The page index (0-based) for which class definitions are to be retrieved.
-     *             If the value is less than zero or beyond the total number of pages, an empty list is returned.
-     * @return A list of class definitions for the given page. The list may be empty if the page index is invalid or out of range.
+     * @param page       The page index (0-based) for which class definitions are to be retrieved. If the value is less
+     *                   than zero or beyond the total number of pages, an empty list is returned.
+     * @return A list of class definitions for the given page. The list may be empty if the page index is invalid or out
+     *         of range.
      */
     private static List<ClassDefinition> getPageClasses(List<ClassDefinition> allClasses, int page) {
         var start = page * UIUtil.ROWS_PER_PAGE;
@@ -403,8 +413,8 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
     }
 
     /**
-     * Calculates the total number of pages required to display a specified number of classes.
-     * The calculation is based on a fixed number of rows per page.
+     * Calculates the total number of pages required to display a specified number of classes. The calculation is based
+     * on a fixed number of rows per page.
      *
      * @param totalClasses The total number of classes to be displayed. Must be a non-negative integer.
      * @return The total number of pages required, with a minimum value of 1.
@@ -414,13 +424,19 @@ public final class ClassSelectionPageUI extends InteractiveCustomUIPage<ClassSel
     }
 
     /**
-     * Retrieves the current state of the page, including information about available classes,
-     * pagination, and the preview of the selected or highlighted class.
+     * Retrieves the current state of the page, including information about available classes, pagination, and the
+     * preview of the selected or highlighted class.
      *
-     * @return an instance of {@code PageState} containing the current page details, class information,
-     *         and other necessary data for displaying the UI state.
+     * @param ref   A reference to the {@link EntityStore}, representing the player's specific data.
+     * @param store the entity store used to access and modify components and data
+     * @return an instance of {@code PageState} containing the current page details, class information, and other
+     *         necessary data for displaying the UI state.
      */
-    private PageState getPageState() {
+    private PageState getPageState(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+        var playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        if (playerRef == null) {
+            return null;
+        }
         var playerId = playerRef.getUuid();
         var allClasses = UIUtil.getSortedClasses();
         var totalPages = getTotalPages(allClasses.size());

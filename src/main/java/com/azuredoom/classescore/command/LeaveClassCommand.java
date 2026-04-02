@@ -42,18 +42,16 @@ public class LeaveClassCommand extends AbstractPlayerCommand {
         @NotNull PlayerRef playerRef,
         @NotNull World world
     ) {
-        var service = ClassesCore.getClassService();
-
         if (
-            service == null ||
-                service.getSelectedClassDefinition(playerRef.getUuid()).isEmpty()
+            ClassesCore.getClassService().getSelectedClassDefinition(playerRef.getUuid()).isEmpty()
         ) {
             playerRef.sendMessage(BaseLangMessages.NO_CLASS_SELECTED);
             return;
         }
         if (this.playerArg.get(commandContext) != null)
             playerRef = this.playerArg.get(commandContext);
-        var classId = service.getPlayerState(playerRef.getUuid())
+        var classId = ClassesCore.getClassService()
+            .getPlayerState(playerRef.getUuid())
             .map(PlayerClassState::classId)
             .orElseThrow();
 

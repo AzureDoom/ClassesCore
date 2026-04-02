@@ -7,11 +7,11 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,8 +24,6 @@ import com.azuredoom.classescore.util.UIUtil;
 
 public final class ClassSelectionPage {
 
-    private final PlayerRef playerRef;
-
     @Nullable
     private String previewClassId;
 
@@ -34,9 +32,7 @@ public final class ClassSelectionPage {
 
     private int currentPage = 0;
 
-    public ClassSelectionPage(@Nonnull PlayerRef playerRef) {
-        this.playerRef = playerRef;
-    }
+    public ClassSelectionPage() {}
 
     /**
      * Opens a connection or initializes resources using the provided reference and store.
@@ -63,7 +59,11 @@ public final class ClassSelectionPage {
         @Nonnull Ref<EntityStore> ref,
         @Nonnull Store<EntityStore> store
     ) {
-        var state = getPageState();
+        var playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        if (playerRef == null) {
+            return;
+        }
+        var state = getPageState(ref, store);
 
         var page = PageBuilder.pageForPlayer(playerRef)
             .withLifetime(CustomPageLifetime.CanDismiss)
@@ -76,12 +76,12 @@ public final class ClassSelectionPage {
             .addEventListener(
                 "prev-btn",
                 CustomUIEventBindingType.Activating,
-                (ignored, ctx) -> handlePreviousPage(ctx)
+                (ignored, ctx) -> handlePreviousPage(ctx, ref, store)
             )
             .addEventListener(
                 "next-btn",
                 CustomUIEventBindingType.Activating,
-                (ignored, ctx) -> handleNextPage(ctx)
+                (ignored, ctx) -> handleNextPage(ctx, ref, store)
             )
             .addEventListener(
                 "confirm-btn",
@@ -94,7 +94,7 @@ public final class ClassSelectionPage {
             page.addEventListener(
                 "preview-" + rowIndex,
                 CustomUIEventBindingType.Activating,
-                (ignored, ctx) -> handlePreviewByIndex(rowIndex, ctx)
+                (ignored, ctx) -> handlePreviewByIndex(rowIndex, ctx, ref, store)
             );
         }
 
@@ -571,21 +571,25 @@ public final class ClassSelectionPage {
      *
      * @param rowIndex the 1-based index of the row on the current page that is being selected for preview
      * @param ctx      the UI context used to manage and apply state or actions on the user interface
+     * @param ref      a reference to the entity store used to access and modify components and data
+     * @param store    the entity store used to access and modify components and data
      */
     private void handlePreviewByIndex(
         int rowIndex,
-        @Nonnull UIContext ctx
+        @Nonnull UIContext ctx,
+        @Nonnull Ref<EntityStore> ref,
+        @Nonnull Store<EntityStore> store
     ) {
         var classes = UIUtil.getSortedClasses();
         int absoluteIndex = (currentPage * UIUtil.ROWS_PER_PAGE) + (rowIndex - 1);
 
         if (absoluteIndex < 0 || absoluteIndex >= classes.size()) {
             statusMessage = BaseLangMessages.UI_INVALID_CLASS_SELECTION.getAnsiMessage();
-            applyState(ctx, getPageState());
+            applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
             return;
         }
 
-        handlePreview(classes.get(absoluteIndex).id(), ctx);
+        handlePreview(classes.get(absoluteIndex).id(), ctx, ref, store);
     }
 
     /**
@@ -597,14 +601,18 @@ public final class ClassSelectionPage {
      * @param classId The ID of the class to be previewed. Must be a non-blank, valid identifier of a registered class.
      * @param ctx     The {@link UIContext} used to update the user interface. Provides methods to apply the updated
      *                state of the page and manage UI interactions.
+     * @param ref     a reference to the entity store used to access and modify components and data
+     * @param store   the entity store used to access and modify components and data
      */
     private void handlePreview(
         @Nonnull String classId,
-        @Nonnull UIContext ctx
+        @Nonnull UIContext ctx,
+        @Nonnull Ref<EntityStore> ref,
+        @Nonnull Store<EntityStore> store
     ) {
         if (classId.isBlank()) {
             statusMessage = "Invalid class selection.";
-            applyState(ctx, getPageState());
+            applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
             return;
         }
 
@@ -614,13 +622,13 @@ public final class ClassSelectionPage {
                 .isEmpty()
         ) {
             statusMessage = BaseLangMessages.UI_CLASS_NO_LONGER_REGISTERED.getAnsiMessage();
-            applyState(ctx, getPageState());
+            applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
             return;
         }
 
         previewClassId = classId;
         statusMessage = null;
-        applyState(ctx, getPageState());
+        applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
     }
 
     /**
@@ -640,11 +648,15 @@ public final class ClassSelectionPage {
         @Nonnull Store<EntityStore> store,
         @Nonnull UIContext ctx
     ) {
+        var playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        if (playerRef == null) {
+            return;
+        }
         var playerId = playerRef.getUuid();
 
         if (previewClassId == null || previewClassId.isBlank()) {
             statusMessage = BaseLangMessages.UI_CHOOSE_CLASS_FIRST.getAnsiMessage();
-            applyState(ctx, getPageState());
+            applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
             return;
         }
 
@@ -656,7 +668,7 @@ public final class ClassSelectionPage {
                 .isPresent()
         ) {
             statusMessage = BaseLangMessages.UI_ALREADY_HAVE_CLASS.getAnsiMessage();
-            applyState(ctx, getPageState());
+            applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
             return;
         }
 
@@ -664,19 +676,16 @@ public final class ClassSelectionPage {
             ClassesCore.getClassService().selectClass(playerId, previewClassId);
         } catch (IllegalStateException | IllegalArgumentException ex) {
             statusMessage = ex.getMessage();
-            applyState(ctx, getPageState());
+            applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
             return;
         }
 
-        var player = store.getComponent(ref, Player.getComponentType());
-        if (player != null) {
-            var chosenName = ClassesCore.getClassServiceIfPresent()
-                .flatMap(s -> s.getSelectedClassDefinition(playerId))
-                .map(ClassDefinition::displayName)
-                .orElse(previewClassId);
+        var chosenName = ClassesCore.getClassServiceIfPresent()
+            .flatMap(s -> s.getSelectedClassDefinition(playerId))
+            .map(ClassDefinition::displayName)
+            .orElse(previewClassId);
 
-            player.sendMessage(BaseLangMessages.SELECTED_CLASS.param("className", chosenName));
-        }
+        playerRef.sendMessage(BaseLangMessages.SELECTED_CLASS.param("className", chosenName));
 
         ctx.getPage().ifPresent(HyUIPage::close);
     }
@@ -796,40 +805,52 @@ public final class ClassSelectionPage {
     }
 
     /**
-     * Handles the action of navigating to the previous page in the UI context.
-     * Decrements the current page index by 1, ensuring it does not go below 0,
-     * resets the status message, and applies the updated state to the UI context.
+     * Handles the action of navigating to the previous page in the UI context. Decrements the current page index by 1,
+     * ensuring it does not go below 0, resets the status message, and applies the updated state to the UI context.
      *
-     * @param ctx the UI context in which the page navigation is performed; must not be null
+     * @param ctx   the UI context in which the page navigation is performed; must not be null
+     * @param ref   a reference to the entity store used to access and modify components and data
+     * @param store the entity store used to access and modify components and data
      */
-    private void handlePreviousPage(@Nonnull UIContext ctx) {
+    private void handlePreviousPage(
+        @Nonnull UIContext ctx,
+        @Nonnull Ref<EntityStore> ref,
+        @Nonnull Store<EntityStore> store
+    ) {
         currentPage = Math.max(0, currentPage - 1);
         statusMessage = null;
-        applyState(ctx, getPageState());
+        applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
     }
 
     /**
-     * Handles navigation to the next page in a paginated context. Updates the current page index
-     * to the next page, ensuring it does not exceed the total number of available pages. Resets
-     * the status message and applies the updated state to the given UI context.
+     * Handles navigation to the next page in a paginated context. Updates the current page index to the next page,
+     * ensuring it does not exceed the total number of available pages. Resets the status message and applies the
+     * updated state to the given UI context.
      *
-     * @param ctx the UI context to which the updated state will be applied; cannot be null
+     * @param ctx   the UI context to which the updated state will be applied; cannot be null
+     * @param ref   a reference to the entity store used to access and modify components and data
+     * @param store the entity store used to access and modify components and data
      */
-    private void handleNextPage(@Nonnull UIContext ctx) {
+    private void handleNextPage(
+        @Nonnull UIContext ctx,
+        @Nonnull Ref<EntityStore> ref,
+        @Nonnull Store<EntityStore> store
+    ) {
         var totalPages = getTotalPages(UIUtil.getSortedClasses().size());
         currentPage = Math.min(totalPages - 1, currentPage + 1);
         statusMessage = null;
-        applyState(ctx, getPageState());
+        applyState(ctx, Objects.requireNonNull(getPageState(ref, store)));
     }
 
     /**
-     * Retrieves a subset of class definitions corresponding to the specified page.
-     * The classes are paginated based on a fixed number of rows per page.
+     * Retrieves a subset of class definitions corresponding to the specified page. The classes are paginated based on a
+     * fixed number of rows per page.
      *
      * @param allClasses The list of all available class definitions. Must not be null.
-     * @param page The page index (0-based) for which class definitions are to be retrieved.
-     *             If the value is less than zero or beyond the total number of pages, an empty list is returned.
-     * @return A list of class definitions for the given page. The list may be empty if the page index is invalid or out of range.
+     * @param page       The page index (0-based) for which class definitions are to be retrieved. If the value is less
+     *                   than zero or beyond the total number of pages, an empty list is returned.
+     * @return A list of class definitions for the given page. The list may be empty if the page index is invalid or out
+     *         of range.
      */
     private static List<ClassDefinition> getPageClasses(List<ClassDefinition> allClasses, int page) {
         var start = page * UIUtil.ROWS_PER_PAGE;
@@ -843,8 +864,8 @@ public final class ClassSelectionPage {
     }
 
     /**
-     * Calculates the total number of pages required to display a specified number of classes.
-     * The calculation is based on a fixed number of rows per page.
+     * Calculates the total number of pages required to display a specified number of classes. The calculation is based
+     * on a fixed number of rows per page.
      *
      * @param totalClasses The total number of classes to be displayed. Must be a non-negative integer.
      * @return The total number of pages required, with a minimum value of 1.
@@ -853,6 +874,14 @@ public final class ClassSelectionPage {
         return Math.max(1, (int) Math.ceil((double) totalClasses / UIUtil.ROWS_PER_PAGE));
     }
 
+    /**
+     * Builds a pagination bar UI component that provides navigation controls for paginated content.
+     *
+     * @param state the current state of the paginated content, including information such as the current page, total
+     *              pages, and navigation availability (previous/next).
+     * @return a {@code GroupBuilder} object representing the constructed pagination bar with buttons for previous and
+     *         next actions, a label displaying the current page, and appropriate spacing between elements.
+     */
     private GroupBuilder buildPaginationBar(PageState state) {
         var bar = GroupBuilder.group()
             .withId("pagination-bar")
@@ -891,13 +920,19 @@ public final class ClassSelectionPage {
     }
 
     /**
-     * Retrieves the current state of the page, including information about available classes,
-     * pagination, and the preview of the selected or highlighted class.
+     * Retrieves the current state of the page, including information about available classes, pagination, and the
+     * preview of the selected or highlighted class.
      *
-     * @return an instance of {@code PageState} containing the current page details, class information,
-     *         and other necessary data for displaying the UI state.
+     * @param ref   a reference to the entity store used to access and modify components and data
+     * @param store the entity store used to access and modify components and data
+     * @return an instance of {@code PageState} containing the current page details, class information, and other
+     *         necessary data for displaying the UI state.
      */
-    private PageState getPageState() {
+    private PageState getPageState(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+        var playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        if (playerRef == null) {
+            return null;
+        }
         var playerId = playerRef.getUuid();
         var allClasses = UIUtil.getSortedClasses();
         var totalPages = getTotalPages(allClasses.size());

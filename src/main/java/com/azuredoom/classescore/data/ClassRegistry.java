@@ -31,7 +31,10 @@ public final class ClassRegistry {
      *         class definition is associated with the given identifier.
      */
     public Optional<ClassDefinition> get(String id) {
-        return Optional.ofNullable(classes.get(id));
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(classes.get(id.toLowerCase(Locale.ROOT)));
     }
 
     /**
