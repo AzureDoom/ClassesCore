@@ -15,6 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 
 import com.azuredoom.classescore.ClassesCore;
+import com.azuredoom.classescore.data.ClassDefinition;
+import com.azuredoom.classescore.data.ClassIdArgumentType;
 import com.azuredoom.classescore.lang.BaseLangMessages;
 
 public final class JoinClassCommand extends AbstractPlayerCommand {
@@ -22,7 +24,8 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
     @Nonnull
     private final RequiredArg<PlayerRef> playerArg;
 
-    private final RequiredArg<String> classIdArg;
+    @Nonnull
+    private final RequiredArg<ClassDefinition> classArg;
 
     public JoinClassCommand() {
         super("join", "Join a class");
@@ -32,7 +35,12 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
             "Player to join class.",
             ArgTypes.PLAYER_REF
         );
-        this.classIdArg = this.withRequiredArg("classId", "Class id to select", ArgTypes.STRING);
+
+        this.classArg = this.withRequiredArg(
+            "classId",
+            "Class to select",
+            ClassIdArgumentType.INSTANCE
+        );
         this.setPermissionGroup(GameMode.Creative);
     }
 
@@ -44,25 +52,19 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
         @NotNull PlayerRef playerRef,
         @NotNull World world
     ) {
-        var service = ClassesCore.getClassService();
-
+        playerRef = this.playerArg.get(commandContext);
         if (
-            service == null ||
-                service.getSelectedClassDefinition(playerRef.getUuid()).isPresent()
+            ClassesCore.getClassService().getSelectedClassDefinition(playerRef.getUuid()).isPresent()
         ) {
             playerRef.sendMessage(BaseLangMessages.ALREADY_HAS_CLASS);
             return;
         }
-        playerRef = this.playerArg.get(commandContext);
-        var classId = classIdArg.get(commandContext);
+        var definition = this.classArg.get(commandContext);
 
-        var definition = ClassesCore.getClassRegistry().get(classId);
-        if (definition.isEmpty()) {
-            playerRef.sendMessage(BaseLangMessages.UNKNOWN_CLASS.param("classId", classId));
-            return;
-        }
+        ClassesCore.getClassService().selectClass(playerRef.getUuid(), definition.id());
+        playerRef.sendMessage(
+            BaseLangMessages.JOINED_CLASS.param("className", definition.displayName())
+        );
 
-        ClassesCore.getClassService().selectClass(playerRef.getUuid(), classId);
-        playerRef.sendMessage(BaseLangMessages.JOINED_CLASS.param("className", definition.get().displayName()));
     }
 }
