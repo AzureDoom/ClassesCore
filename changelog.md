@@ -1,2 +1,2 @@
-v0.1.0
-- Initial release with basic class support and equipment rules.
+v0.1.1
+- Now require TagCore for built-in tag support
