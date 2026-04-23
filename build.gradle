@@ -46,6 +46,7 @@ repositories {
 dependencies {
     implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.4'
     implementation 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.2'
+    implementation 'com.azuredoom.tagcore:TagCore:1.1.0'
     shade 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.2'
     implementation 'com.buuz135:MultipleHUD:1.0.7'
     compileOnly 'curse.maven:dynamictooltipslib-1459711:7817318'
@@ -144,6 +145,7 @@ if (keyPropsFile.exists()) {
                     '-F', "gameVersions=${project.hytale_version}",
                     '-F', "changelog=${changelogText}",
                     '-F', "modIds[]=5e9bbea3-0d7f-4365-93df-5e7acfadf0e7:1.0.4",
+                    '-F', "modIds[]=97be62fd-fdb1-447d-9651-88dfe08723ec:1.1.0",
                     '-F', "modIds[]=2ebf130e-2189-4e90-9323-803a374d05ce:1.5.2"
             )
         }
@@ -171,7 +173,8 @@ if (keyPropsFile.exists()) {
             def cfReleaseType = project.release_type.toString().toLowerCase()
 
             def requiredDeps = [
-                    "levelingcore"
+                    "levelingcore",
+                    "tagcore"
             ]
 
             def optionalDeps = [

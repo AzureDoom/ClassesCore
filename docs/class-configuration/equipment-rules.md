@@ -9,7 +9,11 @@ draft: false
 
 Equipment rules define which weapons and armor a class is allowed to use.
 
-These rules support both **exact item IDs** and **wildcard patterns** for flexible configuration.
+These rules support:
+
+* **exact item IDs**
+* **wildcard patterns**
+* **TagCore tag references**
 
 ---
 
@@ -19,16 +23,30 @@ Example structure:
 
 ```json
 "equipmentRules": {
-  "allowedWeapons": [
-    "Weapon_Sword_*",
-    "Weapon_Dagger_Crude"
-  ],
-  "allowedArmor": [
-    "Armor_Adamantite_*",
-    "Armor_Cloth_*"
-  ]
+"allowedWeapons": [
+"Weapon_Sword_*",
+"Weapon_Dagger_Crude",
+"#tagcore:starter_weapons"
+],
+"allowedArmor": [
+"Armor_Adamantite_*",
+"Armor_Cloth_*",
+"#tagcore:light_armor"
+]
 }
 ```
+
+---
+
+## Pattern Types
+
+Equipment rules support three types of entries:
+
+| Type          | Meaning                             | Example                    |
+|---------------|-------------------------------------|----------------------------|
+| Exact ID      | Matches one specific item ID        | `Weapon_Dagger_Crude`      |
+| Wildcard      | Matches item IDs using `*`          | `Weapon_Sword_*`           |
+| Tag Reference | Matches items in a TagCore item tag | `#tagcore:starter_weapons` |
 
 ---
 
@@ -84,11 +102,66 @@ Equipment rules support simple wildcard matching using `*`.
 
 ---
 
+## Tag Support
+
+Equipment rules support TagCore item tags using the `#` prefix.
+
+Tag entries are useful when items should be grouped by gameplay meaning instead of naming convention.
+
+### Format
+
+```json
+"#namespace:tag_name"
+```
+
+If no namespace is provided, the default `hytale:` namespace is used.
+
+### Examples
+
+```json
+"allowedWeapons": [
+  "#tagcore:starter_weapons"
+]
+```
+
+✔ Allows all items in the `tagcore:starter_weapons` tag.
+
+---
+
+```json
+"allowedArmor": [
+  "#tagcore:light_armor"
+]
+```
+
+✔ Allows all armor items in the `tagcore:light_armor` tag.
+
+---
+
+```json
+"allowedArmor": [
+  "#light_armor"
+]
+```
+
+✔ Uses the default namespace and resolves as `hytale:light_armor`.
+
+---
+
+### Behavior
+
+* Tag entries match all items in the referenced TagCore item tag
+* If the tag does not exist, it is ignored
+* If TagCore is unavailable, the tag entry will not match
+* Tag checks are performed at runtime through TagCore
+
+---
+
 ## Allowed Weapons
 
 **Type:** `array[string]`
 
-Defines which weapon IDs or patterns a class is allowed to use.
+Defines which weapon IDs, patterns, or tags a class is allowed to use.
 
 If the array is empty, **all weapons are allowed**.
 
@@ -100,13 +173,15 @@ Use `allowedWeapons` for:
 * preventing incompatible loadouts
 * preserving balance
 * grouping items via wildcard patterns
+* grouping items via TagCore tags
 
 Examples:
 
 ```json
 "allowedWeapons": [
   "Weapon_Sword_*",
-  "Weapon_Dagger_Crude"
+  "Weapon_Dagger_Crude",
+  "#tagcore:starter_weapons"
 ]
 ```
 
@@ -116,7 +191,7 @@ Examples:
 
 **Type:** `array[string]`
 
-Defines which armor IDs or patterns a class is allowed to equip.
+Defines which armor IDs, patterns, or tags a class is allowed to equip.
 
 If the array is empty, **all armor is allowed**.
 
@@ -125,7 +200,8 @@ Examples:
 ```json
 "allowedArmor": [
   "Armor_Adamantite_*",
-  "Armor_Cloth_*"
+  "Armor_Cloth_*",
+  "#tagcore:light_armor"
 ]
 ```
 
@@ -137,24 +213,30 @@ Examples:
 
 Each weapon entry should:
 
-* be a valid internal item ID **or wildcard pattern**
+* be a valid internal item ID, wildcard pattern, or tag reference
 * represent an item or group the class should be allowed to equip
 
 ### Armor entries
 
 Each armor entry should:
 
-* be a valid internal item ID **or wildcard pattern**
+* be a valid internal item ID, wildcard pattern, or tag reference
 * represent allowed armor pieces or categories
-* use wildcards where appropriate to reduce repetition
+* use wildcards or tags where appropriate to reduce repetition
 
 ---
 
 ## Best Practices
 
-* Prefer **wildcards for tiers or categories**:
+* Prefer **TagCore tags for logical groupings**:
 
-    * `"Weapon_Sword_*"` instead of listing every sword
+  * `#tagcore:starter_weapons`
+  * `#tagcore:light_armor`
+
+* Prefer **wildcards for tiers or categories based on naming conventions**:
+
+  * `"Weapon_Sword_*"` instead of listing every sword
+
 * Use **exact IDs for exceptions or special items**
 * Keep rules **clear and intentional**
 * Avoid overly broad patterns unless intended (e.g., `"*"`)
@@ -177,11 +259,19 @@ Examples:
   ```json
   "allowedWeapons": ["Weapon_Sword_*"]
   ```
+
 * a mage may restrict armor:
 
   ```json
   "allowedArmor": ["Armor_Cloth_*"]
   ```
+
+* a class may use tags to allow a curated item group:
+
+  ```json
+  "allowedWeapons": ["#tagcore:starter_weapons"]
+  ```
+
 * a flexible class may allow everything:
 
   ```json
@@ -192,7 +282,8 @@ Examples:
 
 ## Summary
 
-* Supports **exact IDs and wildcard patterns**
+* Supports **exact IDs, wildcard patterns, and TagCore tag references**
 * Empty arrays = **no restrictions**
+* Tags allow item groups to be managed through TagCore
 * Wildcards reduce repetition and improve maintainability
-* Matching is **pattern-based, not display-name-based**
+* Matching is **ID-based and tag-aware**, not display-name-based
