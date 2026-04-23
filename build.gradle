@@ -48,9 +48,9 @@ dependencies {
     implementation 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.2'
     shade 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.2'
     implementation 'com.buuz135:MultipleHUD:1.0.7'
-    vineCompileOnly 'curse.maven:dynamictooltipslib-1459711:7817318'
+    compileOnly 'curse.maven:dynamictooltipslib-1459711:7817318'
     compileOnly 'at.helpch:placeholderapi-hytale:1.0.8'
-    vineCompileOnly 'curse.maven:hyui-1431415:7820303'
+    compileOnly 'curse.maven:hyui-1431415:7820303'
     //vineImplementation 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'
 }
 
@@ -142,7 +142,9 @@ if (keyPropsFile.exists()) {
                     '-F', "versionNumber=${project.version}",
                     '-F', "channel=${project.release_type}",
                     '-F', "gameVersions=${project.hytale_version}",
-                    '-F', "changelog=${changelogText}"
+                    '-F', "changelog=${changelogText}",
+                    '-F', "modIds[]=5e9bbea3-0d7f-4365-93df-5e7acfadf0e7:1.0.4",
+                    '-F', "modIds[]=2ebf130e-2189-4e90-9323-803a374d05ce:1.5.2"
             )
         }
     }
