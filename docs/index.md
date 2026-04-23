@@ -6,7 +6,7 @@ draft: false
 is_index: true
 ---
 
-![header](https://www.bisecthosting.com/images/CF/LEVELINGCORE/MP_LEVELINGCORE_Header.webp)
+![header](https://www.bisecthosting.com/images/CF/CLASSES_CORE/MP_CLASSESCORE_Header.webp)
 
 # Welcome to the ClassesCore Wiki.
 
