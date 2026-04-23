@@ -6,7 +6,11 @@ public final class BaseLangMessages {
 
     private BaseLangMessages() {}
 
-    public static final Message UNKNOWN_CLASS = Message.translation("server.classescore.unknownclass");
+    public static final String RELOAD_SUCCESS = "server.classescore.reload.success";
+
+    public static final String RELOAD_FAILED = "server.classescore.reload.failed";
+
+    public static final String UNKNOWN_CLASS = "server.classescore.unknownclass";
 
     public static final Message JOINED_CLASS = Message.translation("server.classescore.joinedclass");
 

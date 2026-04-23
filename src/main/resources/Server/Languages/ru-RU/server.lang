@@ -26,3 +26,6 @@ classescore.ui.nodescriptionavailable = Описание отсутствует.
 classescore.ui.alreadychosenclass = Вы уже выбрали класс.
 classescore.ui.pressconfirm = Нажмите «Подтвердить», чтобы выбрать этот класс.
 classescore.ui.selectclasstocontinue = Выберите класс, чтобы продолжить.
+
+classescore.reload.success = Перезагружено классов: {total}.
+classescore.reload.failed = Не удалось перезагрузить классы. Проверьте журналы сервера.

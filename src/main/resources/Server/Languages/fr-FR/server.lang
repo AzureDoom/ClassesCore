@@ -26,3 +26,6 @@ classescore.ui.nodescriptionavailable = Aucune description disponible.
 classescore.ui.alreadychosenclass = Vous avez déjà choisi une classe.
 classescore.ui.pressconfirm = Appuyez sur Confirmer pour valider cette classe.
 classescore.ui.selectclasstocontinue = Sélectionnez une classe pour continuer.
+
+classescore.reload.success = {total} classes rechargées.
+classescore.reload.failed = Échec du rechargement des classes. Vérifiez les journaux du serveur.

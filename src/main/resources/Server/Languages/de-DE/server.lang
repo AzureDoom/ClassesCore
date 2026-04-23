@@ -26,3 +26,6 @@ classescore.ui.nodescriptionavailable = Keine Beschreibung verfügbar.
 classescore.ui.alreadychosenclass = Du hast bereits eine Klasse gewählt.
 classescore.ui.pressconfirm = Drücke „Bestätigen“, um diese Klasse festzulegen.
 classescore.ui.selectclasstocontinue = Wähle eine Klasse, um fortzufahren.
+
+classescore.reload.success = {total} Klassen neu geladen.
+classescore.reload.failed = Klassen konnten nicht neu geladen werden. Überprüfen Sie die Serverprotokolle.

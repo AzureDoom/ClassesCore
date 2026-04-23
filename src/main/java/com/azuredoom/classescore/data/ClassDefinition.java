@@ -1,5 +1,7 @@
 package com.azuredoom.classescore.data;
 
+import com.azuredoom.hytalecustomassetloader.model.AssetSource;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
  * @param passives       A list of {@link PassiveDefinition} objects representing passive abilities or effects
  *                       associated with the class.
  * @param equipmentRules The {@link EquipmentRules} instance that defines the allowed weapons and armor for the class.
+ * @param source         The source the class was loaded from
  */
 public record ClassDefinition(
     String id,
@@ -23,7 +26,8 @@ public record ClassDefinition(
     String description,
     List<StatDefinition> stats,
     List<PassiveDefinition> passives,
-    EquipmentRules equipmentRules
+    EquipmentRules equipmentRules,
+    AssetSource source
 ) {
 
     public ClassDefinition(
@@ -32,7 +36,8 @@ public record ClassDefinition(
         String description,
         List<StatDefinition> stats,
         List<PassiveDefinition> passives,
-        EquipmentRules equipmentRules
+        EquipmentRules equipmentRules,
+        AssetSource source
     ) {
         this.id = id;
         this.displayName = displayName;
@@ -42,5 +47,6 @@ public record ClassDefinition(
         this.equipmentRules = equipmentRules == null
             ? new EquipmentRules(Collections.emptySet(), Collections.emptySet())
             : equipmentRules;
+        this.source = source;
     }
 }

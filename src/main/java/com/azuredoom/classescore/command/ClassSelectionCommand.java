@@ -20,13 +20,14 @@ import com.azuredoom.classescore.ui.ClassSelectionPageUI;
 
 public final class ClassSelectionCommand extends AbstractPlayerCommand {
 
-    public ClassSelectionCommand() {
+    public ClassSelectionCommand(ClassesCore plugin) {
         super("class", "opens UI to select class");
         this.requirePermission("classescore.class");
         this.setPermissionGroup(GameMode.Adventure);
         this.addSubCommand(new JoinClassCommand());
         this.addSubCommand(new LeaveClassCommand());
         this.addSubCommand(new ListClassesCommand());
+        this.addSubCommand(new ReloadClassesCommand(plugin));
     }
 
     @Override

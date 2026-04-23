@@ -54,4 +54,8 @@ public final class ClassRegistry {
     public boolean isEmpty() {
         return classes.isEmpty();
     }
+
+    public void remove(String id) {
+        classes.remove(id);
+    }
 }

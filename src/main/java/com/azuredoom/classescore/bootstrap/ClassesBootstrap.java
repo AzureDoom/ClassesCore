@@ -2,28 +2,22 @@ package com.azuredoom.classescore.bootstrap;
 
 import com.azuredoom.hytalecustomassetloader.AssetDiscoveryOptions;
 import com.azuredoom.hytalecustomassetloader.AssetLoader;
+import com.azuredoom.hytalecustomassetloader.model.AssetSource;
+import com.azuredoom.hytalecustomassetloader.model.AssetSourceKind;
 import com.azuredoom.hytalecustomassetloader.spi.AssetLogger;
+import com.azuredoom.hytalecustomassetloader.spi.ReloadableAssetRegistrar;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.h2.jdbcx.JdbcDataSource;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.JarURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
@@ -36,13 +30,68 @@ public final class ClassesBootstrap {
 
     private static final Gson GSON = new Gson();
 
-    private final ClassesCore plugin;
-
     private final ClassesCoreConfig config;
 
+    private final ClassRegistry registry;
+
+    private final AssetLoader<ClassDefinition> loader;
+
+    private final ReloadableAssetRegistrar<ClassDefinition> registrar;
+
     public ClassesBootstrap(ClassesCore plugin, ClassesCoreConfig config) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.config = Objects.requireNonNull(config, "config");
+        this.registry = new ClassRegistry();
+        var options = new AssetDiscoveryOptions(
+            "classes",
+            ".json",
+            Paths.get("mods").toAbsolutePath().normalize(),
+            true,
+            true,
+            true,
+            true,
+            true,
+            Duration.ofMillis(250)
+        );
+        this.loader = new AssetLoader<>(
+            plugin.getClass().getClassLoader(),
+            options,
+            this::loadClass,
+            ClassDefinition::id,
+            new AssetLogger() {
+
+                @Override
+                public void info(String message) {
+                    plugin.getLogger().atInfo().log(message);
+                }
+
+                @Override
+                public void warn(String message) {
+                    plugin.getLogger().atWarning().log(message);
+                }
+            }
+        );
+
+        this.registrar = new ReloadableAssetRegistrar<>() {
+
+            @Override
+            public void add(String id, ClassDefinition asset) {
+                registry.register(asset);
+                plugin.getLogger().atInfo().log("Added tag: " + id);
+            }
+
+            @Override
+            public void update(String id, ClassDefinition previousAsset, ClassDefinition currentAsset) {
+                registry.remove(id);
+                registry.register(currentAsset);
+                plugin.getLogger().atInfo().log("Updated tag: " + id);
+            }
+
+            @Override
+            public void remove(String id, ClassDefinition asset) {
+                registry.remove(id);
+                plugin.getLogger().atInfo().log("Removed tag: " + id);
+            }
+        };
     }
 
     /**
@@ -60,57 +109,14 @@ public final class ClassesBootstrap {
 
         var repository = new JdbcClassesRepository(dataSource);
         repository.initializeSchema();
+        var result = loader.loadAll();
 
-        var registry = new ClassRegistry();
-        loadAllClasses(registry);
+        for (var entry : result.snapshot().mergedAssets().entrySet()) {
+            registrar.add(entry.getKey(), entry.getValue());
+        }
 
         var service = new ClassServiceImpl(repository, registry, ClassesCore.getPlayerRestrictionCache());
         return new BootstrapResult(repository, registry, service, repository::close);
-    }
-
-    /**
-     * Loads all class definitions from available sources and registers them into the provided {@link ClassRegistry}.
-     * This method aggregates class definitions from the classpath and external ZIP asset packs, merges them, and
-     * registers each unique definition in the registry.
-     *
-     * @param registry The {@link ClassRegistry} instance where the loaded class definitions will be registered. Must
-     *                 not be null.
-     * @throws RuntimeException If any error occurs during the loading or registration of class definitions.
-     */
-    private void loadAllClasses(ClassRegistry registry) {
-        try {
-            var loader = new AssetLoader<>(
-                    plugin.getClass().getClassLoader(),
-                    new AssetDiscoveryOptions(
-                            "classes",
-                            ".json",
-                            resolveAssetPackDirectory(),
-                            true,
-                            true
-                    ),
-                    (stream, sourceName, sourceKind) -> loadClass(stream, sourceName),
-                    ClassDefinition::id,
-                    new AssetLogger() {
-                        @Override
-                        public void info(String message) {
-                            plugin.getLogger().atInfo().log(message);
-                        }
-
-                        @Override
-                        public void warn(String message) {
-                            plugin.getLogger().atWarning().log(message);
-                        }
-                    }
-            );
-
-            var result = loader.loadAll();
-
-            for (var definition : result.mergedAssets().values()) {
-                registry.register(definition);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load class definitions", e);
-        }
     }
 
     /**
@@ -124,7 +130,7 @@ public final class ClassesBootstrap {
      * @throws RuntimeException If an error occurs while reading or parsing the input, or if the JSON structure is
      *                          invalid.
      */
-    private ClassDefinition loadClass(InputStream stream, String sourceName) {
+    private ClassDefinition loadClass(InputStream stream, String sourceName, AssetSourceKind sourceKind) {
         try (var reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
             var root = GSON.fromJson(reader, JsonObject.class);
 
@@ -198,21 +204,12 @@ public final class ClassesBootstrap {
                 description,
                 stats,
                 passives,
-                new EquipmentRules(allowedWeapons, allowedArmor)
+                new EquipmentRules(allowedWeapons, allowedArmor),
+                new AssetSource(sourceKind, sourceName)
             );
         } catch (Exception e) {
             throw new RuntimeException("Failed to load class resource " + sourceName, e);
         }
-    }
-
-    /**
-     * Resolves the directory path where asset packs (such as .zip or .jar files) are stored. This method ensures that
-     * the path is absolute and normalized for consistent usage.
-     *
-     * @return the {@link Path} object representing the absolute and normalized "mods" directory.
-     */
-    private Path resolveAssetPackDirectory() {
-        return Paths.get("mods").toAbsolutePath().normalize();
     }
 
     /**

@@ -49,21 +49,25 @@ public class ClassesCore extends JavaPlugin {
 
     public static final ArmorBlockClassSystem equipBlockManager = new ArmorBlockClassSystem(playerRestrictionCache);
 
+    private ClassesBootstrap bootstrap;
+
+    private ClassesBootstrap.BootstrapResult activeBootstrap;
+
     public ClassesCore(@NotNull JavaPluginInit init) {
         super(init);
         config = this.withConfig("classescore", ClassesCoreConfig.CODEC);
+        this.bootstrap = new ClassesBootstrap(this, config.get());
     }
 
     @Override
     protected void setup() {
         config.save();
 
-        var bootstrap = new ClassesBootstrap(this, config.get()).bootstrap();
+        activeBootstrap = bootstrap.bootstrap();
+        classService = activeBootstrap.service();
+        classRegistry = activeBootstrap.registry();
 
-        classService = bootstrap.service();
-        classRegistry = bootstrap.registry();
-
-        this.getCommandRegistry().registerCommand(new ClassSelectionCommand());
+        this.getCommandRegistry().registerCommand(new ClassSelectionCommand(this));
 
         if (config.get().isEnableClassItemRestrictions()) {
             itemBlockPacketManager.start();
@@ -135,9 +139,11 @@ public class ClassesCore extends JavaPlugin {
         if (config.get().isEnableClassItemRestrictions()) {
             itemBlockPacketManager.shutdown();
         }
-        var bootstrap = new ClassesBootstrap(this, config.get()).bootstrap();
+
         try {
-            bootstrap.closeable().close();
+            if (activeBootstrap != null) {
+                activeBootstrap.closeable().close();
+            }
         } catch (Exception e) {
             throw new ClassesCoreException("Failed to close resources", e);
         }
@@ -174,5 +180,21 @@ public class ClassesCore extends JavaPlugin {
 
     public static PlayerRestrictionCache getPlayerRestrictionCache() {
         return playerRestrictionCache;
+    }
+
+    public void reloadClasses() {
+        try {
+            var newBootstrap = bootstrap.bootstrap();
+
+            if (activeBootstrap != null) {
+                activeBootstrap.closeable().close();
+            }
+
+            activeBootstrap = newBootstrap;
+            classRegistry = newBootstrap.registry();
+            classService = newBootstrap.service();
+        } catch (Exception e) {
+            throw new ClassesCoreException("Failed to reload classes", e);
+        }
     }
 }

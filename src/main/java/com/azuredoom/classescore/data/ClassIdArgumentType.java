@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.lang.BaseLangMessages;
+import com.azuredoom.classescore.util.TranslationUtil;
 
 /**
  * Represents an argument type for a {@link ClassDefinition}. This class is used in command parsing to validate and
@@ -72,11 +73,13 @@ public final class ClassIdArgumentType extends ArgumentType<ClassDefinition> {
         var entered = input[0];
 
         return ClassesCore.getClassRegistry()
-                .get(entered)
-                .orElseGet(() -> {
-                    parseResult.fail(BaseLangMessages.UNKNOWN_CLASS.param("classId", entered));
-                    return null;
-                });
+            .get(entered)
+            .orElseGet(() -> {
+                parseResult.fail(
+                    TranslationUtil.translate(BaseLangMessages.UNKNOWN_CLASS, msg -> msg.param("classId", entered))
+                );
+                return null;
+            });
     }
 
     /**

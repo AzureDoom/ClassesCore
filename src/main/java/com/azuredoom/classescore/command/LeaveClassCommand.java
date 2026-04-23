@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.api.model.PlayerClassState;
 import com.azuredoom.classescore.lang.BaseLangMessages;
+import com.azuredoom.classescore.util.TranslationUtil;
 
 public class LeaveClassCommand extends AbstractPlayerCommand {
 
@@ -57,7 +58,9 @@ public class LeaveClassCommand extends AbstractPlayerCommand {
 
         var definition = ClassesCore.getClassRegistry().get(classId);
         if (definition.isEmpty()) {
-            playerRef.sendMessage(BaseLangMessages.UNKNOWN_CLASS.param("classId", classId));
+            playerRef.sendMessage(
+                TranslationUtil.translate(BaseLangMessages.UNKNOWN_CLASS, msg -> msg.param("classId", classId))
+            );
             return;
         }
 

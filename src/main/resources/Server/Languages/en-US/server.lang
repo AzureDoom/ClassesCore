@@ -26,3 +26,6 @@ classescore.ui.nodescriptionavailable=No description available.
 classescore.ui.alreadychosenclass=You have already chosen a class.
 classescore.ui.pressconfirm=Press Confirm to lock in this class.
 classescore.ui.selectclasstocontinue=Select a class to continue.
+
+classescore.reload.success = Reloaded {total} classes.
+classescore.reload.failed = Failed to reload classes. Check server logs.

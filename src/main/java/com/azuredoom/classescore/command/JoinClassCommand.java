@@ -65,6 +65,5 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
         playerRef.sendMessage(
             BaseLangMessages.JOINED_CLASS.param("className", definition.displayName())
         );
-
     }
 }

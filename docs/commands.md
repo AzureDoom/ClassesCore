@@ -51,3 +51,13 @@ Lists all available classes and their information.
 
 ### Permission
 `classescore.listclasses`
+
+# `/class reload`
+
+Reloads classes from all sources.
+
+### Usage
+`/class reload`
+
+### Permission
+`classescore.reloadclasses`

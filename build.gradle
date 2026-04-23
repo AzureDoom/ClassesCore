@@ -45,8 +45,8 @@ repositories {
 
 dependencies {
     implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.3'
-    implementation 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.0.0'
-    shade 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.0.0'
+    implementation 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.2'
+    shade 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.2'
     implementation 'com.buuz135:MultipleHUD:1.0.7'
     vineCompileOnly 'curse.maven:dynamictooltipslib-1459711:7817318'
     compileOnly 'at.helpch:placeholderapi-hytale:1.0.8'
