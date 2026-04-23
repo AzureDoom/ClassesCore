@@ -1,5 +1,8 @@
 package com.azuredoom.classescore.bootstrap;
 
+import com.azuredoom.hytalecustomassetloader.AssetDiscoveryOptions;
+import com.azuredoom.hytalecustomassetloader.AssetLoader;
+import com.azuredoom.hytalecustomassetloader.spi.AssetLogger;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.h2.jdbcx.JdbcDataSource;
@@ -76,218 +79,37 @@ public final class ClassesBootstrap {
      */
     private void loadAllClasses(ClassRegistry registry) {
         try {
-            var mergedDefinitions = new LinkedHashMap<String, ClassDefinition>();
-            loadAllClasspathClasses(mergedDefinitions);
-            loadExternalZipAssetPacks(mergedDefinitions);
-            for (var definition : mergedDefinitions.values()) {
+            var loader = new AssetLoader<>(
+                    plugin.getClass().getClassLoader(),
+                    new AssetDiscoveryOptions(
+                            "classes",
+                            ".json",
+                            resolveAssetPackDirectory(),
+                            true,
+                            true
+                    ),
+                    (stream, sourceName, sourceKind) -> loadClass(stream, sourceName),
+                    ClassDefinition::id,
+                    new AssetLogger() {
+                        @Override
+                        public void info(String message) {
+                            plugin.getLogger().atInfo().log(message);
+                        }
+
+                        @Override
+                        public void warn(String message) {
+                            plugin.getLogger().atWarning().log(message);
+                        }
+                    }
+            );
+
+            var result = loader.loadAll();
+
+            for (var definition : result.mergedAssets().values()) {
                 registry.register(definition);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to load class definitions", e);
-        }
-    }
-
-    /**
-     * Loads all class definitions available in the classpath and populates the provided sink map. This method
-     * identifies resources named "classes" in the classpath, determines their protocol (e.g., file, jar), and delegates
-     * the processing of the resources to appropriate loading methods based on their protocol. Unsupported protocols are
-     * skipped with a warning.
-     *
-     * @param sink A map to be populated with the loaded class definitions, keyed by their unique identifiers. The map
-     *             must be non-null.
-     * @throws Exception If an error occurs during the resource scanning, processing, or class definition loading.
-     */
-    private void loadAllClasspathClasses(Map<String, ClassDefinition> sink) throws Exception {
-        var classLoader = plugin.getClass().getClassLoader();
-        Enumeration<URL> resources = classLoader.getResources("classes");
-
-        if (!resources.hasMoreElements()) {
-            throw new IllegalStateException("Missing classes resource folder");
-        }
-
-        while (resources.hasMoreElements()) {
-            var resourceUrl = resources.nextElement();
-            var protocol = resourceUrl.getProtocol();
-
-            if ("file".equals(protocol)) {
-                loadClassesFromDirectory(sink, resourceUrl);
-            } else if ("jar".equals(protocol)) {
-                loadClassesFromJar(sink, resourceUrl);
-            } else {
-                plugin.getLogger()
-                    .atWarning()
-                    .log("Skipping unsupported classes resource protocol: " + protocol + " (" + resourceUrl + ")");
-            }
-        }
-    }
-
-    /**
-     * Loads class definitions from a specified directory and populates the provided sink map. This method scans the
-     * directory for files with a ".json" extension, processes them, and extracts {@link ClassDefinition} objects, which
-     * are then added to the sink map.
-     *
-     * @param sink        A map to be populated with the loaded class definitions, keyed by their unique identifiers.
-     *                    The map must be non-null.
-     * @param resourceUrl The URL pointing to the directory from which class definitions will be loaded. Must not be
-     *                    null and must point to a valid directory.
-     * @throws Exception If an error occurs during directory traversal, file processing, or class definition loading.
-     */
-    private void loadClassesFromDirectory(Map<String, ClassDefinition> sink, URL resourceUrl) throws Exception {
-        var classesPath = Paths.get(resourceUrl.toURI());
-
-        try (var stream = Files.walk(classesPath)) {
-            stream.filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith(".json"))
-                .forEach(path -> {
-                    var relative = classesPath.relativize(path).toString().replace('\\', '/');
-                    var sourceName = "classes/" + relative;
-
-                    try (var input = Files.newInputStream(path)) {
-                        var definition = loadClass(input, sourceName);
-                        putDefinition(sink, definition, false, sourceName);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to load class resource " + sourceName, e);
-                    }
-                });
-        }
-    }
-
-    /**
-     * Loads class definitions from a specified JAR file and populates the provided sink map. This method scans the JAR
-     * file for entries located in the "classes/" directory that have a ".json" extension. Each matching entry is
-     * processed to extract its {@link ClassDefinition} and add it to the sink map.
-     *
-     * @param sink        A map to be populated with the loaded class definitions, keyed by their unique identifiers.
-     *                    The map must be non-null.
-     * @param resourceUrl The URL pointing to the JAR file from which class definitions will be loaded. Must not be null
-     *                    and must point to a valid JAR file.
-     * @throws Exception If an error occurs during JAR file access, entry processing, or class definition loading.
-     */
-    private void loadClassesFromJar(Map<String, ClassDefinition> sink, URL resourceUrl) throws Exception {
-        var connection = (JarURLConnection) resourceUrl.openConnection();
-
-        try (var jarFile = connection.getJarFile()) {
-            var entries = jarFile.entries();
-
-            while (entries.hasMoreElements()) {
-                var entry = entries.nextElement();
-                var name = entry.getName();
-
-                if (!entry.isDirectory() && name.startsWith("classes/") && name.endsWith(".json")) {
-                    try (var input = jarFile.getInputStream(entry)) {
-                        var definition = loadClass(input, name);
-                        putDefinition(sink, definition, false, name);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Loads external ZIP or JAR asset packs into the provided sink map. This method scans a specific directory for ZIP
-     * and JAR files, then extracts class definitions contained within these archives and populates the sink map.
-     *
-     * @param sink The map to store the loaded class definitions, keyed by their unique identifiers. The map must be
-     *             non-null.
-     * @throws Exception If an error occurs during file processing or while loading class definitions.
-     */
-    private void loadExternalZipAssetPacks(Map<String, ClassDefinition> sink) throws Exception {
-        var assetPackDir = resolveAssetPackDirectory();
-
-        if (!Files.exists(assetPackDir) || !Files.isDirectory(assetPackDir)) {
-            return;
-        }
-
-        try (var stream = Files.list(assetPackDir)) {
-            stream.filter(Files::isRegularFile)
-                .filter(path -> {
-                    var name = path.getFileName().toString().toLowerCase();
-                    return name.endsWith(".zip") || name.endsWith(".jar");
-                })
-                .sorted()
-                .forEach(path -> {
-                    try {
-                        loadClassesFromZip(sink, path);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to load asset pack " + path, e);
-                    }
-                });
-        }
-    }
-
-    /**
-     * Loads class definitions from a specified ZIP file and adds them to the provided sink map. This method processes
-     * files within the ZIP that are located in the "classes/" directory and have a ".json" extension. Each JSON file is
-     * parsed to create a {@link ClassDefinition}, which is then added to the sink map.
-     *
-     * @param sink    A map to store the loaded class definitions, keyed by their unique identifiers. The map must be
-     *                non-null.
-     * @param zipPath The path to the ZIP file containing the class definition files. Must not be null and must point to
-     *                a valid ZIP file.
-     * @throws Exception If an error occurs during the processing of the ZIP file or the loading of class definitions.
-     */
-    private void loadClassesFromZip(Map<String, ClassDefinition> sink, Path zipPath) throws Exception {
-        try (var zipFile = new ZipFile(zipPath.toFile())) {
-            var entries = zipFile.entries();
-
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                var name = entry.getName();
-
-                if (!entry.isDirectory() && name.startsWith("classes/") && name.endsWith(".json")) {
-                    try (var input = zipFile.getInputStream(entry)) {
-                        var definition = loadClass(input, zipPath.getFileName() + "!/" + name);
-                        putDefinition(sink, definition, true, zipPath + "!/" + name);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Adds a class definition to the provided sink map. If a definition with the same ID already exists in the sink,
-     * its behavior depends on the `overrideExisting` flag: - If `overrideExisting` is true, the existing definition
-     * will be replaced. - If `overrideExisting` is false, the existing definition will be retained, and a warning will
-     * be logged.
-     *
-     * @param sink             The map that stores class definitions, keyed by their unique identifiers.
-     * @param definition       The {@link ClassDefinition} to be added to the sink. Must not be null.
-     * @param overrideExisting A boolean flag indicating whether to override an existing definition with the same ID.
-     * @param sourceName       The name of the source from which the class definition originates, used for logging and
-     *                         error reporting.
-     * @throws NullPointerException  If the `definition` parameter is null.
-     * @throws IllegalStateException If the `definition` has a null or blank ID.
-     */
-    private void putDefinition(
-        Map<String, ClassDefinition> sink,
-        ClassDefinition definition,
-        boolean overrideExisting,
-        String sourceName
-    ) {
-        Objects.requireNonNull(definition, "definition");
-
-        var id = definition.id();
-        if (id == null || id.isBlank()) {
-            throw new IllegalStateException("Class definition from " + sourceName + " has null or blank id");
-        }
-
-        var existing = sink.get(id);
-        if (existing == null) {
-            sink.put(id, definition);
-            plugin.getLogger().at(Level.INFO).log("Loaded class '" + id + "' from " + sourceName);
-            return;
-        }
-
-        if (overrideExisting) {
-            sink.put(id, definition);
-            plugin.getLogger().at(Level.INFO).log("Overrode class '" + id + "' from " + sourceName);
-        } else {
-            plugin.getLogger()
-                .atWarning()
-                .log(
-                    "Skipping duplicate built-in/classpath class '" + id + "' from " + sourceName
-                        + " because one was already loaded"
-                );
         }
     }
 
