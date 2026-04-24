@@ -146,7 +146,7 @@ if (keyPropsFile.exists()) {
                     '-F', "changelog=${changelogText}",
                     '-F', "modIds[]=5e9bbea3-0d7f-4365-93df-5e7acfadf0e7:1.0.4",
                     '-F', "modIds[]=97be62fd-fdb1-447d-9651-88dfe08723ec:1.1.0",
-                    '-F', "modIds[]=2ebf130e-2189-4e90-9323-803a374d05ce:1.5.2"
+                    '-F', "modIds[]=2ebf130e-2189-4e90-9323-803a374d05ce:1.5.2:optional"
             )
         }
     }
