@@ -103,12 +103,10 @@ public final class ItemPatternMatcher {
     private static boolean matchesTag(String tagReference, String itemId) {
         var tagId = normalizeTagId(tagReference.substring(1));
 
-        var tagServiceOptional = TagService.getTagService();
-        if (tagServiceOptional.isEmpty()) {
+        var tagService = TagService.getTagService().orElse(null);
+        if (tagService == null) {
             return false;
         }
-
-        var tagService = tagServiceOptional.get();
 
         if (!tagService.hasTag(tagId)) {
             return false;
