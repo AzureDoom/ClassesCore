@@ -15,8 +15,7 @@
         "Hytale:InteractionModule": "*",
         "Hytale:DamageModule": "*",
         "Hytale:AssetModule": "*",
-        "com.azuredoom:levelingcore": "*",
-        "com.azuredoom:classescore": "*"
+        "com.azuredoom:levelingcore": "*"
     },
     "OptionalDependencies": {
         "Ellie:HyUI": "*",
