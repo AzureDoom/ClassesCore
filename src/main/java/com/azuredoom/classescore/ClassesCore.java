@@ -35,7 +35,7 @@ public class ClassesCore extends JavaPlugin {
 
     public static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    private static Config<ClassesCoreConfig> config = null;
+    private static Config<ClassesCoreConfig> config;
 
     private static ClassServiceImpl classService;
 
@@ -56,12 +56,13 @@ public class ClassesCore extends JavaPlugin {
     public ClassesCore(@NotNull JavaPluginInit init) {
         super(init);
         config = this.withConfig("classescore", ClassesCoreConfig.CODEC);
-        this.bootstrap = new ClassesBootstrap(this, config.get());
     }
 
     @Override
     protected void setup() {
         config.save();
+
+        this.bootstrap = new ClassesBootstrap(this, config.get());
 
         activeBootstrap = bootstrap.bootstrap();
         classService = activeBootstrap.service();
