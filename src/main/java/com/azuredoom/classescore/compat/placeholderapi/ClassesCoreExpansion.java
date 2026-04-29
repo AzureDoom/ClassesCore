@@ -1,6 +1,7 @@
 package com.azuredoom.classescore.compat.placeholderapi;
 
 import at.helpch.placeholderapi.expansion.PlaceholderExpansion;
+import com.azuredoom.classescore.data.ClassDefinition;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,15 +32,36 @@ public class ClassesCoreExpansion extends PlaceholderExpansion {
     }
 
     @Override
-    public @Nullable String onPlaceholderRequest(PlayerRef playerRef, @NotNull String params) {
+    public @Nullable String onPlaceholderRequest(@NotNull PlayerRef playerRef, @NotNull String params) {
+        if (params.isBlank()) {
+            return null;
+        }
+
         var classesService = ClassesCore.getClassService();
         var classRegistry = ClassesCore.getClassRegistry();
+
         if (classesService == null || classRegistry == null) {
             return null;
         }
-        if (params.equalsIgnoreCase("class")) {
-            return classesService.getPlayerState(playerRef.getUuid()).map(PlayerClassState::classId).orElse(null);
+
+        var state = classesService.getPlayerState(playerRef.getUuid()).orElse(null);
+
+        if (state == null) {
+            return switch (params.toLowerCase()) {
+                case "class", "class_id", "class_name" -> "";
+                case "has_class" -> "false";
+                default -> null;
+            };
         }
-        return null;
+
+        return switch (params.toLowerCase()) {
+            case "class", "class_id" -> state.classId();
+
+            case "class_name" -> classesService.getSelectedClassDefinition(playerRef.getUuid())
+                    .map(ClassDefinition::displayName)
+                    .orElse(state.classId());
+
+            default -> null;
+        };
     }
 }
