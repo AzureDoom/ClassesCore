@@ -76,20 +76,20 @@ public final class ClassesBootstrap {
             @Override
             public void add(String id, ClassDefinition asset) {
                 registry.register(asset);
-                plugin.getLogger().atInfo().log("Added tag: " + id);
+                plugin.getLogger().atInfo().log("Added class: " + id);
             }
 
             @Override
             public void update(String id, ClassDefinition previousAsset, ClassDefinition currentAsset) {
                 registry.remove(id);
                 registry.register(currentAsset);
-                plugin.getLogger().atInfo().log("Updated tag: " + id);
+                plugin.getLogger().atInfo().log("Added class: " + id);
             }
 
             @Override
             public void remove(String id, ClassDefinition asset) {
                 registry.remove(id);
-                plugin.getLogger().atInfo().log("Removed tag: " + id);
+                plugin.getLogger().atInfo().log("Added class: " + id);
             }
         };
     }
