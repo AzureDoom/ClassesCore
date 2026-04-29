@@ -46,7 +46,7 @@ public final class ClassesBootstrap {
             ".json",
             Paths.get("mods").toAbsolutePath().normalize(),
             true,
-            true,
+            false,
             true,
             true,
             true,
