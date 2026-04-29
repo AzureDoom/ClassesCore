@@ -158,6 +158,6 @@ hytalePublisher {
         hasNsfwContent = false
 
         dependency "AzureDoom", "LevelingCore", "1.0.4"
-        dependency "AzureDoom", "TagCore", "1.1.1"
+        dependency "AzureDoom", "TagCore", "1.1.2"
     }
 }
