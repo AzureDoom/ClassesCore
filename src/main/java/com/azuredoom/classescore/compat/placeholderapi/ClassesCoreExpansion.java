@@ -1,13 +1,12 @@
 package com.azuredoom.classescore.compat.placeholderapi;
 
 import at.helpch.placeholderapi.expansion.PlaceholderExpansion;
-import com.azuredoom.classescore.data.ClassDefinition;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.azuredoom.classescore.ClassesCore;
-import com.azuredoom.classescore.api.model.PlayerClassState;
+import com.azuredoom.classescore.data.ClassDefinition;
 
 public class ClassesCoreExpansion extends PlaceholderExpansion {
 
@@ -58,8 +57,8 @@ public class ClassesCoreExpansion extends PlaceholderExpansion {
             case "class", "class_id" -> state.classId();
 
             case "class_name" -> classesService.getSelectedClassDefinition(playerRef.getUuid())
-                    .map(ClassDefinition::displayName)
-                    .orElse(state.classId());
+                .map(ClassDefinition::displayName)
+                .orElse(state.classId());
 
             default -> null;
         };
