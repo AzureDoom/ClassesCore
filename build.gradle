@@ -3,8 +3,8 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'com.diffplug.spotless' version '8.1.0'
-    id 'com.azuredoom.hytale-tools' version '1.0.23'
-    id 'com.azuredoom.hytalepublisher' version '1.0.0'
+    id 'com.azuredoom.hytale-tools' version '1.0.24'
+    id 'com.azuredoom.hytalepublisher' version '1.0.1'
 }
 
 javadoc {
@@ -118,10 +118,12 @@ hytalePublisher {
     version       = project.version
     releaseType   = "release"
     changelogFile = "changelog.md"
+    gameVersion   = project.hytale_version.toString()
 
     modtale {
         enabled   = true
         projectId = project.modtale_uuid
+        patchline = 'release'
 
         required "5e9bbea3-0d7f-4365-93df-5e7acfadf0e7", "1.0.4"
         required "97be62fd-fdb1-447d-9651-88dfe08723ec", "1.1.0"
@@ -141,5 +143,8 @@ hytalePublisher {
     modifold {
         enabled   = true
         projectId = project.mod_id
+
+        required "levelingcore"
+        required "tagcore"
     }
 }
