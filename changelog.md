@@ -1,7 +1,4 @@
-v0.1.2
+v0.1.3
 
-- Fixes crash due to missing classes folders.
-- Fixes incorrect adding classes logs.
-- Fixes crash due to config not being ready yet.
-- Fixes crash due to requiring on itself.
-- Added better placeholder api support and doc.
+- Fixes issue where anything not h2 DB wise will error out.
+- Updates Hytale Custom Asset loader.
