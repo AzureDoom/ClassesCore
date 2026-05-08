@@ -5,6 +5,7 @@ plugins {
     id 'com.diffplug.spotless' version '8.1.0'
     id 'com.azuredoom.hytale-tools' version '1.0.24'
     id 'com.azuredoom.hytalepublisher' version '1.1.1'
+    id 'com.gradleup.shadow' version '9.3.0'
 }
 
 tasks.withType(GenerateModuleMetadata).configureEach {
@@ -17,6 +18,8 @@ javadoc {
 
 configurations {
     shade
+    shadowBundle
+    implementation.extendsFrom(shadowBundle)
 }
 
 group = project.group
@@ -58,6 +61,38 @@ dependencies {
     compileOnly 'at.helpch:placeholderapi-hytale:1.0.8'
     compileOnly 'curse.maven:hyui-1431415:7820303'
     //vineImplementation 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'
+
+    shadowBundle 'com.h2database:h2:2.4.240'
+    shadowBundle('com.zaxxer:HikariCP:7.0.2') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+    shadowBundle 'org.slf4j:slf4j-api:2.0.17'
+    shadowBundle 'org.yaml:snakeyaml:2.5'
+    shadowBundle 'net.objecthunter:exp4j:0.4.8'
+    shadowBundle 'com.mysql:mysql-connector-j:9.5.0'
+    shadowBundle 'org.mariadb.jdbc:mariadb-java-client:3.5.7'
+    shadowBundle 'org.postgresql:postgresql:42.7.8'
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+
+    configurations = [project.configurations.shadowBundle]
+
+    manifest {
+        attributes(
+                'Main-Class': 'com.azuredoom.classescore.ClassesCore'
+        )
+    }
+
+    relocate 'com.zaxxer.hikari', 'com.azuredoom.classescore.libs.hikari'
+    relocate 'org.slf4j', 'com.azuredoom.classescore.libs.slf4j'
+    relocate 'org.yaml.snakeyaml', 'com.azuredoom.classescore.libs.snakeyaml'
+    relocate 'net.objecthunter.exp4j', 'com.azuredoom.classescore.libs.exp4j'
+    relocate 'com.mysql', 'com.azuredoom.classescore.libs.mysql'
+    relocate 'org.mariadb', 'com.azuredoom.classescore.libs.mariadb'
+    relocate 'org.postgresql', 'com.azuredoom.classescore.libs.postgresql'
 }
 
 tasks.jar {
@@ -82,7 +117,7 @@ spotless {
 }
 
 tasks.build {
-    dependsOn("spotlessApply")
+    dependsOn("spotlessApply", "shadowJar")
 }
 
 publishing {
@@ -99,7 +134,9 @@ publishing {
     publications {
         maven(MavenPublication) {
             artifactId base.archivesName.get()
-            from components.java
+            artifact(tasks.shadowJar)
+            artifact(tasks.sourcesJar)
+            artifact(tasks.javadocJar)
             pom.withXml {
                 asNode().dependencies.dependency.each { dep ->
                     if (dep.groupId.text() == 'curse.maven' || dep.groupId.text() == 'com.azuredoom.levelingcore' || dep.groupId.text() == 'com.buuz135') {

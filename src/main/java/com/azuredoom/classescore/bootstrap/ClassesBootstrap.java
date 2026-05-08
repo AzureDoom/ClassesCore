@@ -8,7 +8,6 @@ import com.azuredoom.hytalecustomassetloader.spi.AssetLogger;
 import com.azuredoom.hytalecustomassetloader.spi.ReloadableAssetRegistrar;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import org.h2.jdbcx.JdbcDataSource;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,6 +21,7 @@ import java.util.Objects;
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
 import com.azuredoom.classescore.data.*;
+import com.azuredoom.classescore.db.DataSourceFactory;
 import com.azuredoom.classescore.db.JdbcClassesRepository;
 import com.azuredoom.classescore.service.ClassServiceImpl;
 import com.azuredoom.classescore.util.StatType;
@@ -102,10 +102,10 @@ public final class ClassesBootstrap {
      *         operation to release resources.
      */
     public BootstrapResult bootstrap() {
-        var dataSource = new JdbcDataSource();
-        dataSource.setURL(config.getJDBCConnection());
-        dataSource.setUser("");
-        dataSource.setPassword("");
+        var dataSource = DataSourceFactory.create(
+            config.getJDBCConnection(),
+            10
+        );
 
         var repository = new JdbcClassesRepository(dataSource);
         repository.initializeSchema();
