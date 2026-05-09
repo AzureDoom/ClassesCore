@@ -13,7 +13,7 @@ Opens the class menu as long as the player is not in a class.
 `/class`
 
 ### Permission
-`classescore.class`
+`com.azuredoom.classescore.command.classescore.class`
 
 # `/class join <class>`
 
@@ -28,7 +28,7 @@ Allows the player to join a class if they have the required permissions.
 # `/class leave`
 
 ### Permission
-`classescore.joinclass`
+`com.azuredoom.classescore.command.classescore.joinclass`
 
 Allows the player to leave their current class if they have the required permissions.
 
@@ -40,7 +40,7 @@ Allows the player to leave their current class if they have the required permiss
 `--player=PlayerName` - The player to leave the class for. If not specified, the command will be executed for the sender.
 
 ### Permission
-`classescore.leaveclass`
+`com.azuredoom.classescore.command.classescore.leaveclass`
 
 # `/class list`
 
@@ -50,7 +50,7 @@ Lists all available classes and their information.
 `/class list`
 
 ### Permission
-`classescore.listclasses`
+`com.azuredoom.classescore.command.classescore.listclasses`
 
 # `/class reload`
 
@@ -60,4 +60,4 @@ Reloads classes from all sources.
 `/class reload`
 
 ### Permission
-`classescore.reloadclasses`
+`com.azuredoom.classescore.command.classescore.reloadclasses`
