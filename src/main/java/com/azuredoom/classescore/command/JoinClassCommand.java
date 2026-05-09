@@ -29,7 +29,7 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
 
     public JoinClassCommand() {
         super("join", "Join a class");
-        this.requirePermission("classescore.joinclass");
+        //this.requirePermission("classescore.joinclass");
         this.playerArg = this.withRequiredArg(
             "player",
             "Player to join class.",

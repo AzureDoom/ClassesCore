@@ -22,7 +22,7 @@ public final class ClassSelectionCommand extends AbstractPlayerCommand {
 
     public ClassSelectionCommand(ClassesCore plugin) {
         super("class", "opens UI to select class");
-        this.requirePermission("classescore.class");
+        //this.requirePermission("classescore.class");
         this.setPermissionGroup(GameMode.Adventure);
         this.addSubCommand(new JoinClassCommand());
         this.addSubCommand(new LeaveClassCommand());
