@@ -1,4 +1,3 @@
-v0.1.3
+v0.1.4
 
-- Fixes issue where anything not h2 DB wise will error out.
-- Updates Hytale Custom Asset loader.
+- Implemented HStats support.

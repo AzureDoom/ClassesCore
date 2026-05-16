@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import com.azuredoom.classescore.bootstrap.ClassesBootstrap;
 import com.azuredoom.classescore.command.ClassSelectionCommand;
 import com.azuredoom.classescore.compat.DynamicTooltipsLibCompat;
+import com.azuredoom.classescore.compat.HStats;
 import com.azuredoom.classescore.compat.placeholderapi.PlaceholderAPICompat;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
 import com.azuredoom.classescore.data.ClassDefinition;
@@ -126,6 +127,7 @@ public class ClassesCore extends JavaPlugin {
                     .map(ClassDefinition::id)
                     .toList()
             );
+        new HStats("213bd24b-c5bb-4d50-a897-eb8bf7956a5e", "0.1.4", LOGGER);
     }
 
     @Override
