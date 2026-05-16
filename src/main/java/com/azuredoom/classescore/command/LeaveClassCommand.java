@@ -26,7 +26,7 @@ public class LeaveClassCommand extends AbstractPlayerCommand {
 
     public LeaveClassCommand() {
         super("leave", "Leave a class");
-        //this.requirePermission("classescore.leaveclass");
+        // this.requirePermission("classescore.leaveclass");
         this.playerArg = this.withOptionalArg(
             "player",
             "Player to leave class.",

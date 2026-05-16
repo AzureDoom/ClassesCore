@@ -20,7 +20,7 @@ public class ReloadClassesCommand extends AbstractPlayerCommand {
 
     public ReloadClassesCommand(ClassesCore plugin) {
         super("reload", "Reloads all available classes");
-        //this.requirePermission("classescore.reloadclasses");
+        // this.requirePermission("classescore.reloadclasses");
         this.setPermissionGroup(GameMode.Creative);
         this.plugin = plugin;
     }
