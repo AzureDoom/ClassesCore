@@ -1,3 +1,3 @@
-v0.1.4
+v0.1.5
 
-- Implemented HStats support.
+- Update 5 supported.
