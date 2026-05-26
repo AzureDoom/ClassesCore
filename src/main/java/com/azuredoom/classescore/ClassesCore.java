@@ -154,7 +154,7 @@ public class ClassesCore extends JavaPlugin {
 
     public void registerAllSystems() {
         getEntityStoreRegistry().registerSystem(
-            new HandGateTickingSystem(itemBlockPacketManager.getHandCheckState(), playerRestrictionCache)
+            new HandGateTickingSystem(itemBlockPacketManager.getHandCheckState())
         );
         getEntityStoreRegistry().registerSystem(equipBlockManager);
         getEntityStoreRegistry().registerSystem(new ClassDamageSystem());

@@ -32,7 +32,6 @@ public class LeaveClassCommand extends AbstractPlayerCommand {
             "Player to leave class.",
             ArgTypes.PLAYER_REF
         );
-        this.setPermissionGroup(GameMode.Creative);
     }
 
     @Override

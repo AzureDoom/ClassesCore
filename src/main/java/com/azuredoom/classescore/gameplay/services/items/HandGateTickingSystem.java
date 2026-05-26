@@ -24,14 +24,10 @@ public class HandGateTickingSystem extends EntityTickingSystem<EntityStore> {
 
     private final Map<UUID, HandCheckState> lastChecks;
 
-    private final PlayerRestrictionCache restrictionCache;
-
     public HandGateTickingSystem(
-        Map<UUID, HandCheckState> lastChecks,
-        PlayerRestrictionCache restrictionCache
+        Map<UUID, HandCheckState> lastChecks
     ) {
         this.lastChecks = lastChecks;
-        this.restrictionCache = restrictionCache;
     }
 
     @Override

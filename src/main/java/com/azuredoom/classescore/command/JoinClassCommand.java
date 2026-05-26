@@ -41,7 +41,6 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
             "Class to select",
             ClassIdArgumentType.INSTANCE
         );
-        this.setPermissionGroup(GameMode.Creative);
     }
 
     @Override

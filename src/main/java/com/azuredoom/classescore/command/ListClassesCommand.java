@@ -19,7 +19,6 @@ public class ListClassesCommand extends AbstractPlayerCommand {
     public ListClassesCommand() {
         super("list", "Lists all available classes");
         // this.requirePermission("classescore.listclasses");
-        this.setPermissionGroup(GameMode.Creative);
     }
 
     @Override

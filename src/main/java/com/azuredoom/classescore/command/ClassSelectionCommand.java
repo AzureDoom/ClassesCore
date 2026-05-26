@@ -3,7 +3,6 @@ package com.azuredoom.classescore.command;
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -23,7 +22,7 @@ public final class ClassSelectionCommand extends AbstractPlayerCommand {
     public ClassSelectionCommand(ClassesCore plugin) {
         super("class", "opens UI to select class");
         // this.requirePermission("classescore.class");
-        this.setPermissionGroup(GameMode.Adventure);
+        this.setPermissionGroups("hytale:None");
         this.addSubCommand(new JoinClassCommand());
         this.addSubCommand(new LeaveClassCommand());
         this.addSubCommand(new ListClassesCommand());
