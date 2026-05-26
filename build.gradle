@@ -3,8 +3,8 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'com.diffplug.spotless' version '8.1.0'
-    id 'com.azuredoom.hytale-tools' version '1.0.24'
-    id 'com.azuredoom.hytalepublisher' version '1.1.1'
+    id 'com.azuredoom.hytale-tools' version '1.+'
+    id 'com.azuredoom.hytalepublisher' version '1.+'
     id 'com.gradleup.shadow' version '9.3.0'
 }
 
@@ -45,6 +45,15 @@ hytaleTools {
     disabledByDefault = project.disabled_by_default.toString().toBoolean()
     includesPack = project.includes_pack.toString().toBoolean()
     patchline = project.patchline.toString()
+
+    debugEnabled = true
+    debugPort = 5005
+    debugSuspend = false
+
+    hotSwapEnabled = true
+    requireDcevm = true
+    useHotswapAgent = true
+    hotswapAgentPath = '/mnt/4C56E67556E65EE8/HyTale Mods/hotswap-agent-2.0.3.jar'
 }
 
 repositories {
@@ -52,11 +61,10 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.5'
+    implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.8'
     implementation 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.3'
-    implementation 'com.azuredoom.tagcore:TagCore:1.1.3'
+    implementation 'com.azuredoom.tagcore:TagCore:1.1.5'
     shade 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.3'
-    implementation 'com.buuz135:MultipleHUD:1.0.7'
     compileOnly 'curse.maven:dynamictooltipslib-1459711:7817318'
     compileOnly 'at.helpch:placeholderapi-hytale:1.0.8'
     compileOnly 'curse.maven:hyui-1431415:7820303'
