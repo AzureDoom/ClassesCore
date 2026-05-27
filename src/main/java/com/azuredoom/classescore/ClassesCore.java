@@ -17,7 +17,6 @@ import java.util.logging.Level;
 
 import com.azuredoom.classescore.bootstrap.ClassesBootstrap;
 import com.azuredoom.classescore.command.ClassSelectionCommand;
-import com.azuredoom.classescore.compat.DynamicTooltipsLibCompat;
 import com.azuredoom.classescore.compat.HStats;
 import com.azuredoom.classescore.compat.placeholderapi.PlaceholderAPICompat;
 import com.azuredoom.classescore.config.ClassesCoreConfig;
@@ -26,9 +25,7 @@ import com.azuredoom.classescore.data.ClassRegistry;
 import com.azuredoom.classescore.exceptions.ClassesCoreException;
 import com.azuredoom.classescore.gameplay.services.armor.ArmorBlockClassSystem;
 import com.azuredoom.classescore.gameplay.services.damage.ClassDamageSystem;
-import com.azuredoom.classescore.gameplay.services.items.HandGateTickingSystem;
-import com.azuredoom.classescore.gameplay.services.items.ItemBlockPacketManager;
-import com.azuredoom.classescore.gameplay.services.items.PlayerRestrictionCache;
+import com.azuredoom.classescore.gameplay.services.items.*;
 import com.azuredoom.classescore.gameplay.services.stats.StatsTickingSystem;
 import com.azuredoom.classescore.service.ClassServiceImpl;
 
@@ -114,9 +111,6 @@ public class ClassesCore extends JavaPlugin {
                     ClassesCore.getClassServiceIfPresent()
                         .ifPresent(service -> service.evictPlayer(playerId));
                 });
-        }
-        if (PluginManager.get().getPlugin(new PluginIdentifier("org.herolias", "DynamicTooltipsLib")) != null) {
-            DynamicTooltipsLibCompat.register();
         }
         LOGGER.at(Level.INFO)
             .log("ClassesCore setup complete. Loaded " + classRegistry.all().size() + " classes.");
