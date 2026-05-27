@@ -1,3 +1,4 @@
-v0.1.5
+v0.1.6
 
-- Update 5 supported.
+- Fixes update 5 server matching issue.
+- Replace dynamictooltipslib compat with new built-in system via LevelingCore. 
