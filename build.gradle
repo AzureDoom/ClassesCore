@@ -17,7 +17,6 @@ javadoc {
 }
 
 configurations {
-    shade
     shadowBundle
     implementation.extendsFrom(shadowBundle)
 }
@@ -63,9 +62,8 @@ repositories {
 
 dependencies {
     implementation 'com.azuredoom.levelingcore:LevelingCore:1.0.9'
-    implementation 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.3'
     implementation 'com.azuredoom.tagcore:TagCore:1.1.6'
-    shade 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.3'
+    shadowBundle 'com.azuredoom.hytalecustomassetloader:hytale-custom-asset-loader:1.1.3'
     compileOnly 'at.helpch:placeholderapi-hytale:1.0.8'
     compileOnly 'curse.maven:hyui-1431415:7820303'
     //vineImplementation 'modtale:3e453e84-81af-46bf-9e7d-c7de99d9c4f0:0.1.0-alpha@jar'
@@ -101,16 +99,7 @@ shadowJar {
     relocate 'com.mysql', 'com.azuredoom.classescore.libs.mysql'
     relocate 'org.mariadb', 'com.azuredoom.classescore.libs.mariadb'
     relocate 'org.postgresql', 'com.azuredoom.classescore.libs.postgresql'
-}
-
-tasks.jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from {
-        configurations.shade.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-
-    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    relocate 'com.azuredoom.hytalecustomassetloader', 'com.azuredoom.classescore.libs.hytalecustomassetloader'
 }
 
 spotless {
