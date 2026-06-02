@@ -1,24 +1,23 @@
 package com.azuredoom.classescore.command;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
-import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 import com.azuredoom.classescore.ClassesCore;
 import com.azuredoom.classescore.data.ClassDefinition;
 import com.azuredoom.classescore.data.ClassIdArgumentType;
 import com.azuredoom.classescore.lang.BaseLangMessages;
+import com.azuredoom.classescore.util.PlayerClassContextManager;
 
-public final class JoinClassCommand extends AbstractPlayerCommand {
+public final class JoinClassCommand extends AbstractAsyncCommand {
 
     @Nonnull
     private final RequiredArg<PlayerRef> playerArg;
@@ -28,7 +27,7 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
 
     public JoinClassCommand() {
         super("join", "Join a class");
-        // this.requirePermission("classescore.joinclass");
+
         this.playerArg = this.withRequiredArg(
             "player",
             "Player to join class.",
@@ -37,31 +36,59 @@ public final class JoinClassCommand extends AbstractPlayerCommand {
 
         this.classArg = this.withRequiredArg(
             "classId",
-            "Class to select",
+            "Class to select.",
             ClassIdArgumentType.INSTANCE
         );
     }
 
+    @NotNull
     @Override
-    protected void execute(
-        @NotNull CommandContext commandContext,
-        @NotNull Store<EntityStore> store,
-        @NotNull Ref<EntityStore> ref,
-        @NotNull PlayerRef playerRef,
-        @NotNull World world
-    ) {
-        playerRef = this.playerArg.get(commandContext);
-        if (
-            ClassesCore.getClassService().getSelectedClassDefinition(playerRef.getUuid()).isPresent()
-        ) {
-            playerRef.sendMessage(BaseLangMessages.ALREADY_HAS_CLASS);
-            return;
-        }
+    protected CompletableFuture<Void> executeAsync(@NotNull CommandContext commandContext) {
+        var playerRef = this.playerArg.get(commandContext);
+        var playerUuid = playerRef.getUuid();
         var definition = this.classArg.get(commandContext);
 
-        ClassesCore.getClassService().selectClass(playerRef.getUuid(), definition.id());
-        playerRef.sendMessage(
-            BaseLangMessages.JOINED_CLASS.param("className", definition.displayName())
-        );
+        if (
+            ClassesCore.getClassService()
+                .getSelectedClassDefinition(playerUuid)
+                .isPresent()
+        ) {
+            commandContext.sendMessage(BaseLangMessages.ALREADY_HAS_CLASS);
+            return CompletableFuture.completedFuture(null);
+        }
+
+        var context = PlayerClassContextManager.getContext(playerUuid);
+
+        if (context == null || context.entityRef() == null || !context.entityRef().isValid()) {
+            commandContext.sendMessage(Message.raw("Could not find active player context."));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        var future = new CompletableFuture<Void>();
+
+        context.world().execute(() -> {
+            try {
+                ClassesCore.getClassService().selectClass(playerUuid, definition.id());
+
+                var message = BaseLangMessages.JOINED_CLASS.param(
+                    "className",
+                    definition.displayName()
+                );
+
+                commandContext.sendMessage(message);
+
+                future.complete(null);
+            } catch (Exception e) {
+                ClassesCore.LOGGER.atWarning()
+                    .withCause(e)
+                    .log("Failed to select class for player {}", playerUuid);
+
+                commandContext.sendMessage(Message.raw("Failed to join class. Check the server log."));
+
+                future.complete(null);
+            }
+        });
+
+        return future;
     }
 }

@@ -28,6 +28,7 @@ import com.azuredoom.classescore.gameplay.services.damage.ClassDamageSystem;
 import com.azuredoom.classescore.gameplay.services.items.*;
 import com.azuredoom.classescore.gameplay.services.stats.StatsTickingSystem;
 import com.azuredoom.classescore.service.ClassServiceImpl;
+import com.azuredoom.classescore.util.PlayerClassContextManager;
 
 public class ClassesCore extends JavaPlugin {
 
@@ -74,19 +75,26 @@ public class ClassesCore extends JavaPlugin {
             this.getEventRegistry()
                 .registerGlobal(PlayerReadyEvent.class, (event) -> {
                     var player = event.getPlayer();
+                    var playerRef = player.getReference();
+                    if (playerRef == null) {
+                        LOGGER.at(Level.WARNING).log("Player reference is null");
+                        return;
+                    }
+                    var playerRefComponent = playerRef.getStore()
+                        .getComponent(playerRef, PlayerRef.getComponentType());
+                    if (playerRefComponent == null) {
+                        LOGGER.at(Level.WARNING).log("Player ref component is null");
+                        return;
+                    }
+                    var playerId = playerRefComponent.getUuid();
+
+                    PlayerClassContextManager.trackPlayer(
+                        playerId,
+                        player,
+                        playerRef.getStore(),
+                        playerRef
+                    );
                     ClassesCore.getClassServiceIfPresent().ifPresent(service -> {
-                        var playerRef = player.getReference();
-                        if (playerRef == null) {
-                            LOGGER.at(Level.WARNING).log("Player reference is null");
-                            return;
-                        }
-                        var playerRefComponent = playerRef.getStore()
-                            .getComponent(playerRef, PlayerRef.getComponentType());
-                        if (playerRefComponent == null) {
-                            LOGGER.at(Level.WARNING).log("Player ref component is null");
-                            return;
-                        }
-                        var playerId = playerRefComponent.getUuid();
                         if (service.hasSelectedClass(playerId)) {
                             service.getSelectedClassDefinition(playerId)
                                 .ifPresentOrElse(
@@ -104,12 +112,18 @@ public class ClassesCore extends JavaPlugin {
             this.getEventRegistry()
                 .registerGlobal(PlayerDisconnectEvent.class, (event) -> {
                     var playerId = event.getPlayerRef().getUuid();
-                    ClassesCore.getPlayerRestrictionCache().clear(playerId);
-                    itemBlockPacketManager.getHandCheckState().remove(playerId);
-                    itemBlockPacketManager.clearPlayer(playerId);
-                    playerRestrictionCache.clear(playerId);
+
+                    PlayerClassContextManager.clear(playerId);
+
                     ClassesCore.getClassServiceIfPresent()
                         .ifPresent(service -> service.evictPlayer(playerId));
+
+                    if (config.get().isEnableClassItemRestrictions()) {
+                        ClassesCore.getPlayerRestrictionCache().clear(playerId);
+                        itemBlockPacketManager.getHandCheckState().remove(playerId);
+                        itemBlockPacketManager.clearPlayer(playerId);
+                        playerRestrictionCache.clear(playerId);
+                    }
                 });
         }
         LOGGER.at(Level.INFO)
