@@ -1,4 +1,4 @@
-v0.1.6
+v0.1.7
 
-- Fixes update 5 server matching issue.
-- Replace dynamictooltipslib compat with new built-in system via LevelingCore. 
+- Make class join/leave/reload/list commands work from the console as well.
+- shadow instead of shade library, I'm already shadowing drivers
