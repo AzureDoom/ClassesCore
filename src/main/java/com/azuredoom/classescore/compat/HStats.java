@@ -1,6 +1,5 @@
 package com.azuredoom.classescore.compat;
 
-import com.azuredoom.classescore.ClassesCore;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -18,6 +17,8 @@ import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+
+import com.azuredoom.classescore.ClassesCore;
 
 public class HStats {
 
