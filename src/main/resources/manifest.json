@@ -1,7 +1,7 @@
 {
     "Group": "com.azuredoom",
     "Name": "classescore",
-    "Version": "0.1.7",
+    "Version": "0.1.8",
     "Description": "Classes Module for the LevelingCore mod",
     "Authors": [
         {
@@ -9,7 +9,7 @@
         }
     ],
     "Website": "https://modtale.net/mod/classescore",
-    "ServerVersion": ">=0.5.0 <0.6.0",
+    "ServerVersion": ">=0.6.0 <0.7.0",
     "Dependencies": {
         "Hytale:EntityModule": "*",
         "Hytale:InteractionModule": "*",
