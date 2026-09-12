@@ -143,7 +143,7 @@ hytalePublisher {
         required "5e9bbea3-0d7f-4365-93df-5e7acfadf0e7", "1.0.4"
         required "97be62fd-fdb1-447d-9651-88dfe08723ec", "1.1.0"
         optional "2ebf130e-2189-4e90-9323-803a374d05ce", "1.5.2"
-        optional "c0e9d87b-e72e-4b39-bb3b-cb67c23ec8be", "0.6.0"
+        optional "c0e9d87b-e72e-4b39-bb3b-cb67c23ec8be", "2.0.1"
     }
 
     curseforge {
