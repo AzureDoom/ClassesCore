@@ -19,7 +19,8 @@
     },
     "OptionalDependencies": {
         "Ellie:HyUI": "*",
-        "org.herolias:DynamicTooltipsLib": "*"
+        "org.herolias:DynamicTooltipsLib": "*",
+        "Alechilles:Beacon": "*"
     },
     "DisabledByDefault": false,
     "Main": "com.azuredoom.classescore.ClassesCore",
